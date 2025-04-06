@@ -32,6 +32,10 @@ const { exec } = require("child_process");
 const http = require("http");
 const zlib = require('zlib');
 const PREFIX = conf.PREFIX;
+const { promisify } = require('util');
+const stream = require('stream');
+const extract = require('extract-zip');
+const pipeline = promisify(stream.pipeline);
 const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
 const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`;
@@ -243,23 +247,77 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
  //============================================================================================================
 
 console.log("Loading Bwm xmd Commands...\n");
+async function loadRemoteCommands() {
+    const repoUrl = 'https://github.com/wevedo/simply_html/archive/refs/heads/main.zip';
+    const tempZipPath = path.join(__dirname, 'temp_repo.zip');
+    const extractPath = path.join(__dirname, 'temp_repo');
+    const taskflowPath = path.join(extractPath, 'simply_html-main', 'Taskflow');
 
-// Load commands from Taskflow folder
-try {
-    const taskflowPath = path.join(__dirname, "Taskflow");
-    fs.readdirSync(taskflowPath).forEach((fichier) => {
-        if (path.extname(fichier).toLowerCase() === ".js") {
-            try {
-                require(path.join(taskflowPath, fichier));
-                console.log(`✔️ ${fichier} installed successfully.`);
-            } catch (e) {
-                console.error(`❌ Failed to load ${fichier}: ${e.message}`);
+    try {
+        // Download the repository
+        console.log('⬇️ Downloading repository...');
+        const response = await axios({
+            method: 'get',
+            url: repoUrl,
+            responseType: 'stream'
+        });
+        
+        await pipeline(response.data, fs.createWriteStream(tempZipPath));
+        
+        // Extract the zip file
+        console.log('📦 Extracting repository...');
+        await extract(tempZipPath, { dir: extractPath });
+        
+        // Load commands from Taskflow folder
+        console.log('🔍 Loading commands from remote Taskflow...');
+        const files = fs.readdirSync(taskflowPath);
+        
+        for (const fichier of files) {
+            if (path.extname(fichier).toLowerCase() === '.js') {
+                try {
+                    require(path.join(taskflowPath, fichier));
+                    console.log(`✔️ ${fichier} installed successfully.`);
+                } catch (e) {
+                    console.error(`❌ Failed to load ${fichier}: ${e.message}`);
+                }
             }
         }
-    });
-} catch (error) {
-    console.error("❌ Error reading Taskflow folder:", error.message);
+        
+        // Clean up
+        fs.unlinkSync(tempZipPath);
+        fs.rmSync(extractPath, { recursive: true, force: true });
+        
+    } catch (error) {
+        console.error('❌ Error loading remote commands:', error.message);
+        
+        // Clean up in case of error
+        if (fs.existsSync(tempZipPath)) fs.unlinkSync(tempZipPath);
+        if (fs.existsSync(extractPath)) fs.rmSync(extractPath, { recursive: true, force: true });
+    }
 }
+
+// Load both local and remote commands
+(async () => {
+    // First load local commands (original code)
+    try {
+        const localTaskflowPath = path.join(__dirname, "Taskflow");
+        fs.readdirSync(localTaskflowPath).forEach((fichier) => {
+            if (path.extname(fichier).toLowerCase() === ".js") {
+                try {
+                    require(path.join(localTaskflowPath, fichier));
+                    console.log(`✔️ Local ${fichier} installed successfully.`);
+                } catch (e) {
+                    console.error(`❌ Failed to load local ${fichier}: ${e.message}`);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("❌ Error reading local Taskflow folder:", error.message);
+    }
+
+    // Then load remote commands
+    await loadRemoteCommands();
+})();
 
  //============================================================================//
 
