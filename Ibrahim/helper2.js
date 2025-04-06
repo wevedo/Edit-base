@@ -1,15 +1,16 @@
 
 // utils/contextManager.js
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
-const BOT_NAME = "BWM-XMD";
+const BOT_INFO = {
+    name: process.env.BOT_NAME || "BWM-XMD",
+    version: "8.6Q",
+    mode: process.env.NODE_ENV === "production" ? "Production" : "Development"
+};
 const thumbnails = [
-                "https://files.catbox.moe/165qf7.jpg",
-                "https://files.catbox.moe/24j10y.jpeg"
-            ];
-
-            // Select a random thumbnail
-            const DEFAULT_THUMBNAIL = thumbnails[Math.floor(Math.random() * thumbnails.length)];
-
+"https://files.catbox.moe/165qf7.jpg",
+"https://files.catbox.moe/24j10y.jpeg"
+  ];
+const DEFAULT_THUMBNAIL = thumbnails[Math.floor(Math.random() * thumbnails.length)];
 const createContext2 = (userJid, options = {}) => ({
     contextInfo: {
         mentionedJid: [userJid],
@@ -32,5 +33,6 @@ const createContext2 = (userJid, options = {}) => ({
 });
 
 module.exports = {
-    createContext2
+    createContext2,
+    BOT_INFO
 };
