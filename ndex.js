@@ -37,6 +37,7 @@ const PREFIX = conf.PREFIX;
 const { promisify } = require('util');
 const stream = require('stream');
 const extract = require('adm-zip');
+const { File } = require('megajs');
 const pipeline = promisify(stream.pipeline);
 const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
@@ -248,37 +249,60 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-console.log("Loading Bwm xmd Commands...\n");
-const { execSync } = require('child_process');
+// Configuration
+const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/megalorder/refs/heads/main/bwmxmd.json';
+const ZIP_NAME = 'mega-main.zip';
+const TASKFLOW_FOLDER = 'Taskflow';
 
-async function loadRemoteCommands() {
-    const repoUrl = 'https://github.com/wevedo/simply_html.git';
-    const tempRepoPath = path.join(__dirname, 'temp_repo');
-    const taskflowPath = path.join(tempRepoPath, 'Taskflow');
-
+async function downloadAndExtractBot() {
     try {
-        // Clone the entire repository (requires git installed)
-        console.log('⬇️ Cloning repository...');
-        execSync(`git clone --depth 1 ${repoUrl} ${tempRepoPath}`);
+        console.log('📡 Fetching download link...');
+        const { data } = await axios.get(CONFIG_URL);
+        const megaLink = data.zipmegalink || data.megalink;
+        
+        if (!megaLink) throw new Error('No MEGA link found in config');
 
-        // Load commands from Taskflow folder with proper require context
-        console.log('🔍 Loading commands from remote Taskflow...');
-        const files = fs.readdirSync(taskflowPath);
+        console.log('⬇️ Downloading bot package...');
+        const megaFile = File.fromURL(megaLink);
+        const zipPath = path.join(__dirname, ZIP_NAME);
 
-        // Create a custom require function that resolves paths relative to the repo
+        // Download ZIP
+        const fileBuffer = await new Promise((resolve, reject) => {
+            megaFile.download((err, data) => err ? reject(err) : resolve(data));
+        });
+        fs.writeFileSync(zipPath, fileBuffer);
+
+        // Extract ZIP (overwrites existing files)
+        console.log('📦 Extracting files...');
+        const zip = new AdmZip(zipPath);
+        zip.extractAllTo(__dirname, true);
+        fs.unlinkSync(zipPath);
+
+        console.log('✅ Extraction completed');
+    } catch (error) {
+        console.error('❌ Download/extraction failed:', error.message);
+        throw error;
+    }
+}
+
+function loadTaskflowCommands() {
+    try {
+        const taskflowPath = path.join(__dirname, TASKFLOW_FOLDER);
+        
+        // Create custom require function that resolves paths relative to extraction root
         const customRequire = (modulePath) => {
-            // Resolve paths relative to the repository root
-            if (modulePath.startsWith('../')) {
+            if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
                 const absolutePath = path.resolve(taskflowPath, modulePath);
                 return require(absolutePath);
             }
             return require(modulePath);
         };
 
-        for (const file of files) {
+        console.log(`🔄 Loading commands from ${TASKFLOW_FOLDER}...`);
+        fs.readdirSync(taskflowPath).forEach((file) => {
             if (path.extname(file).toLowerCase() === '.js') {
                 try {
-                    // Create a custom module environment
+                    // Create module context
                     const moduleObj = {
                         exports: {},
                         require: customRequire,
@@ -286,7 +310,7 @@ async function loadRemoteCommands() {
                         paths: [taskflowPath, ...require.main.paths]
                     };
 
-                    // Read and execute the file
+                    // Load and execute the file
                     const content = fs.readFileSync(path.join(taskflowPath, file), 'utf8');
                     const wrapper = Function('module', 'exports', 'require', content);
                     wrapper(moduleObj, moduleObj.exports, customRequire);
@@ -296,49 +320,30 @@ async function loadRemoteCommands() {
                     console.error(`❌ Failed to load ${file}: ${e.message}`);
                 }
             }
-        }
-
-        // Clean up
-        execSync(`rm -rf ${tempRepoPath}`);
+        });
     } catch (error) {
-        console.error('❌ Error loading remote commands:', error.message);
-        try {
-            if (fs.existsSync(tempRepoPath)) {
-                execSync(`rm -rf ${tempRepoPath}`);
-            }
-        } catch (cleanupError) {
-            console.error('❌ Cleanup failed:', cleanupError.message);
-        }
+        console.error(`❌ Error reading ${TASKFLOW_FOLDER} folder:`, error.message);
+        throw error;
     }
 }
 
-// Load both local and remote commands
-(async () => {
-    // First load local commands
+async function main() {
     try {
-        const localTaskflowPath = path.join(__dirname, "Taskflow");
-        if (fs.existsSync(localTaskflowPath)) {
-            fs.readdirSync(localTaskflowPath).forEach((file) => {
-                if (path.extname(file).toLowerCase() === ".js") {
-                    try {
-                        require(path.join(localTaskflowPath, file));
-                        console.log(`✔️ Local ${file} loaded successfully`);
-                    } catch (e) {
-                        console.error(`❌ Failed to load local ${file}: ${e.message}`);
-                    }
-                }
-            });
-        } else {
-            console.log("ℹ️ No local Taskflow folder found");
-        }
+        // 1. Download and extract the bot package
+        await downloadAndExtractBot();
+        
+        // 2. Load commands from Taskflow folder with proper require resolution
+        loadTaskflowCommands();
+        
+        console.log('🎉 All commands loaded successfully!');
     } catch (error) {
-        console.error("❌ Error reading local Taskflow folder:", error.message);
+        console.error('💀 Critical error during setup:', error.message);
+        process.exit(1);
     }
+}
 
-    // Then load remote commands
-    await loadRemoteCommands();
-})();
-
+// Start the process
+main();
  //============================================================================//
 
  adams.ev.on("messages.upsert", async ({ messages }) => {
