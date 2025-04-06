@@ -37,7 +37,7 @@
     "@xaviabot/fb-downloader": "^1.0.14",
     "util": "^0.12.5",
     "aptoide-scraper": "^1.0.1",
-    "adm-zip":"^0.5.16"
+    "adm-zip":"^0.5.16",
     "api-dylux": "^1.8.5",
     "acrcloud": "^1.4.0",
     "music-lyrics": "^2.0.2",
