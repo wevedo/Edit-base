@@ -6,7 +6,7 @@ const {uploadImageToImgur} = require("../Ibrahim/imgur")
 function createCanvacordCommand(commandName, canvacordFunction) {
   adams({
     nomCom: commandName,
-    categorie: "Image-Edit",
+    categorie: "image edit",
     reaction: "🎉"
   }, async (origineMessage, zk, commandeOptions) => {
     const { ms, msgRepondu, auteurMsgRepondu } = commandeOptions;
