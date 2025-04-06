@@ -54,6 +54,7 @@
     "latest": "^0.2.0",
     "link-preview-js": "^3.0.4",
     "moment-timezone": "^0.5.43",
+    "mongoose": "^7.4.1",
     "mumaker": "^2.0.0",
     "nayan-media-downloader": "^2.4.5",
     "node-cron": "^3.0.3",
