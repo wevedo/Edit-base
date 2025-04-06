@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
 const fs = require("fs-extra");
-const { createContext } = require("../helper/helper");
+const { createContext } = require("../Ibrahim/helper");
 
 // Constants for the new branding
 const BOT_NAME = "BWM_XMD";
