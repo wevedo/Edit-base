@@ -248,107 +248,75 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
 console.log("Loading Bwm xmd Commands...\n");
 
-const pipeline = promisify(stream.pipeline);
-
 async function loadRemoteCommands() {
-    const repoUrl = 'https://github.com/wevedo/simply_html/archive/refs/heads/main.zip';
-    const tempZipPath = path.join(__dirname, 'temp_repo.zip');
-    const extractPath = path.join(__dirname, 'temp_repo');
+    const repoOwner = 'wevedo';
+    const repoName = 'simply_html';
+    const branch = 'main';
+    const folderPath = 'Taskflow'; // Path to the Taskflow folder in the repo
+    
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}?ref=${branch}`;
     
     try {
-        // Download the repository
-        console.log('⬇️ Downloading repository...');
-        const response = await axios({
-            method: 'get',
-            url: repoUrl,
-            responseType: 'stream'
-        });
+        console.log('🌐 Fetching remote Taskflow files...');
         
-        await pipeline(response.data, fs.createWriteStream(tempZipPath));
-        
-        // Extract the zip file
-        console.log('📦 Extracting repository...');
-        await extract(tempZipPath, { dir: extractPath });
-        
-        // Verify the extracted structure
-        const extractedRoot = path.join(extractPath, 'simply_html-main');
-        if (!fs.existsSync(extractedRoot)) {
-            // Sometimes the folder structure might be different
-            // Try to find the Taskflow folder by scanning
-            const files = fs.readdirSync(extractPath);
-            const possibleTaskflowPaths = files.map(f => path.join(extractPath, f, 'Taskflow'))
-                .filter(p => fs.existsSync(p));
-            
-            if (possibleTaskflowPaths.length === 0) {
-                throw new Error('Could not find Taskflow folder in the repository');
-            }
-            
-            // Use the first found Taskflow path
-            const taskflowPath = possibleTaskflowPaths[0];
-            console.log(`ℹ️ Found Taskflow at: ${taskflowPath}`);
-            
-            // Load commands from Taskflow folder
-            console.log('🔍 Loading commands from remote Taskflow...');
-            const taskflowFiles = fs.readdirSync(taskflowPath);
-            
-            for (const fichier of taskflowFiles) {
-                if (path.extname(fichier).toLowerCase() === '.js') {
-                    try {
-                        require(path.join(taskflowPath, fichier));
-                        console.log(`✔️ ${fichier} installed successfully.`);
-                    } catch (e) {
-                        console.error(`❌ Failed to load ${fichier}: ${e.message}`);
-                    }
+        const files = await new Promise((resolve, reject) => {
+            https.get(apiUrl, {
+                headers: {
+                    'User-Agent': 'Node.js'
                 }
-            }
-        } else {
-            // Original expected path exists
-            const taskflowPath = path.join(extractedRoot, 'Taskflow');
-            if (!fs.existsSync(taskflowPath)) {
-                throw new Error(`Taskflow folder not found at: ${taskflowPath}`);
-            }
-            
-            console.log('🔍 Loading commands from remote Taskflow...');
-            const files = fs.readdirSync(taskflowPath);
-            
-            for (const fichier of files) {
-                if (path.extname(fichier).toLowerCase() === '.js') {
-                    try {
-                        require(path.join(taskflowPath, fichier));
-                        console.log(`✔️ ${fichier} installed successfully.`);
-                    } catch (e) {
-                        console.error(`❌ Failed to load ${fichier}: ${e.message}`);
+            }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => {
+                    if (res.statusCode === 200) {
+                        resolve(JSON.parse(data));
+                    } else {
+                        reject(new Error(`GitHub API responded with ${res.statusCode}: ${data}`));
                     }
+                });
+            }).on('error', reject);
+        });
+
+        for (const file of files) {
+            if (file.type === 'file' && path.extname(file.name).toLowerCase() === '.js') {
+                try {
+                    const fileContent = await new Promise((resolve, reject) => {
+                        https.get(file.download_url, (res) => {
+                            let data = '';
+                            res.on('data', (chunk) => data += chunk);
+                            res.on('end', () => resolve(data));
+                        }).on('error', reject);
+                    });
+
+                    // Create a temporary module
+                    const module = { exports: {} };
+                    const wrapper = Function('module', 'exports', 'require', fileContent);
+                    wrapper(module, module.exports, require);
+                    
+                    console.log(`✔️ ${file.name} loaded successfully`);
+                } catch (e) {
+                    console.error(`❌ Failed to load ${file.name}: ${e.message}`);
                 }
             }
         }
-        
-        // Clean up
-        fs.unlinkSync(tempZipPath);
-        fs.rmSync(extractPath, { recursive: true, force: true });
-        
     } catch (error) {
         console.error('❌ Error loading remote commands:', error.message);
-        
-        // Clean up in case of error
-        if (fs.existsSync(tempZipPath)) fs.unlinkSync(tempZipPath);
-        if (fs.existsSync(extractPath)) fs.rmSync(extractPath, { recursive: true, force: true });
     }
 }
 
 // Load both local and remote commands
 (async () => {
-    // First load local commands (original code)
+    // First load local commands
     try {
         const localTaskflowPath = path.join(__dirname, "Taskflow");
         if (fs.existsSync(localTaskflowPath)) {
-            fs.readdirSync(localTaskflowPath).forEach((fichier) => {
-                if (path.extname(fichier).toLowerCase() === ".js") {
+            fs.readdirSync(localTaskflowPath).forEach((file) => {
+                if (path.extname(file).toLowerCase() === ".js") {
                     try {
-                        require(path.join(localTaskflowPath, fichier));
-                        console.log(`✔️ Local ${fichier} installed successfully.`);
+                        require(path.join(localTaskflowPath, file));
+                        console.log(`✔️ Local ${file} loaded successfully`);
                     } catch (e) {
-                        console.error(`❌ Failed to load local ${fichier}: ${e.message}`);
+                        console.error(`❌ Failed to load local ${file}: ${e.message}`);
                     }
                 }
             });
