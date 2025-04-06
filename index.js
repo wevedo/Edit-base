@@ -271,19 +271,19 @@ async function loadBot() {
         zip.extractAllTo(__dirname);
         fs.unlinkSync('temp.zip');
 
-        // 4. Verify extraction
-        console.log('🔍 Verifying extracted files...');
-        const taskflowPath = path.join(__dirname, 'Taskflow');
-        const adamsPath = path.join(__dirname, 'Ibrahim', 'adams.js');
+        // 4. Set correct paths (everything is in mega-main folder)
+        const basePath = path.join(__dirname, 'mega-main');
+        const taskflowPath = path.join(basePath, 'Taskflow');
+        const adamsPath = path.join(basePath, 'Ibrahim', 'adams.js');
         
         if (!fs.existsSync(taskflowPath)) {
-            console.log('⚠️ Extracted files:');
-            console.log(fs.readdirSync(__dirname));
-            throw new Error('Taskflow folder not found after extraction');
+            console.log('⚠️ Contents of mega-main folder:');
+            console.log(fs.readdirSync(basePath));
+            throw new Error('Taskflow folder not found in mega-main');
         }
 
         if (!fs.existsSync(adamsPath)) {
-            throw new Error('Ibrahim/adams.js not found after extraction');
+            throw new Error('Ibrahim/adams.js not found in mega-main');
         }
 
         // 5. Load all Taskflow commands
@@ -295,11 +295,9 @@ async function loadBot() {
             return;
         }
 
-        // Create custom require function for Adams
+        // Create custom require function that works from mega-main base
         const customRequire = (mod) => {
-            if (mod === '../Ibrahim/adams') {
-                return require(adamsPath);
-            }
+            if (mod === '../Ibrahim/adams') return require(adamsPath);
             return require(mod);
         };
 
@@ -310,7 +308,7 @@ async function loadBot() {
                 const filePath = path.join(taskflowPath, file);
                 const code = fs.readFileSync(filePath, 'utf8');
                 
-                // Inject custom require
+                // Create custom require context
                 const wrapper = new Function('module', 'exports', 'require', code);
                 wrapper(module, module.exports, customRequire);
                 
