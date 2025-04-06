@@ -249,12 +249,6 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-const fs = require('fs');
-const path = require('path');
-const { File } = require('megajs');
-const AdmZip = require('adm-zip');
-const axios = require('axios');
-
 async function loadBot() {
     // 1. Get MEGA link from JSON
     const { data } = await axios.get('https://raw.githubusercontent.com/wevedo/megalorder/main/bwmxmd.json');
