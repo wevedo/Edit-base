@@ -163,7 +163,7 @@ async function main() {
 
 
  //============================================================================//
-            
+    /*        
                          
 // Listener Manager Class
 class ListenerManager {
@@ -242,7 +242,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 });
 
 
- 
+ */
 
  //============================================================================================================
 
@@ -320,7 +320,7 @@ async function loadRemoteCommands() {
 })();
 
  //============================================================================//
-
+/*
  adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message || !ms?.key) return;
@@ -547,3 +547,4 @@ adams.ev.on("connection.update", async (update) => {
 setTimeout(() => {
     main().catch(err => console.log("Initialization error:", err));
 }, 5000);
+*/
