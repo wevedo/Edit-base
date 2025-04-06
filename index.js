@@ -249,52 +249,49 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-// 1. Download and extract ZIP
-async function setup() {
-    const zipUrl = "https://raw.githubusercontent.com/wevedo/megalorder/refs/heads/main/bwmxmd.json"; // Replace with actual MEGA link
-    const zipPath = path.join(__dirname, "mega-main.zip");
-    
-    // Download
-    const megaFile = File.fromURL(zipUrl);
-    const buffer = await new Promise((resolve, reject) => {
-        megaFile.download((err, data) => err ? reject(err) : resolve(data));
-    });
-    fs.writeFileSync(zipPath, buffer);
-    
-    // Extract
-    new AdmZip(zipPath).extractAllTo(__dirname);
-    fs.unlinkSync(zipPath);
-}
+const fs = require('fs');
+const path = require('path');
+const { File } = require('megajs');
+const AdmZip = require('adm-zip');
+const axios = require('axios');
 
-// 2. Load Taskflow commands
-function loadCommands() {
-    const taskflowPath = path.join(__dirname, "Taskflow");
-    const adamsPath = path.join(__dirname, "Ibrahim", "adams.js");
+async function loadBot() {
+    // 1. Get MEGA link from JSON
+    const { data } = await axios.get('https://raw.githubusercontent.com/wevedo/megalorder/main/bwmxmd.json');
+    const megaLink = data.zipmegalink || data.megalink;
+
+    // 2. Download and extract ZIP
+    const zipBuffer = await new Promise((resolve, reject) => {
+        File.fromURL(megaLink).download((err, data) => err ? reject(err) : resolve(data));
+    });
+    fs.writeFileSync('mega-main.zip', zipBuffer);
+    new AdmZip('mega-main.zip').extractAllTo(__dirname);
+    fs.unlinkSync('mega-main.zip');
+
+    // 3. Load all Taskflow commands with Adams support
+    const commandsPath = path.join(__dirname, 'Taskflow');
+    const adamsPath = path.join(__dirname, 'Ibrahim', 'adams.js');
     
-    // Custom require to handle ../Ibrahim/adams
-    const customRequire = (mod) => 
-        mod === '../Ibrahim/adams' ? require(adamsPath) : require(mod);
-    
-    // Load all JS files
-    fs.readdirSync(taskflowPath).forEach(file => {
+    fs.readdirSync(commandsPath).forEach(file => {
         if (file.endsWith('.js')) {
             try {
-                const cmd = require(path.join(taskflowPath, file));
-                cmd.require = customRequire; // Inject custom require
-                console.log(`✔ Loaded ${file}`);
+                // Patch require to handle ../Ibrahim/adams
+                const originalRequire = require;
+                require = (mod) => 
+                    mod === '../Ibrahim/adams' ? originalRequire(adamsPath) : originalRequire(mod);
+                
+                require(path.join(commandsPath, file));
+                console.log(`✔ ${file} loaded`);
+                
+                require = originalRequire; // Restore original
             } catch (e) {
-                console.error(`✖ Error in ${file}: ${e.message}`);
+                console.error(`✖ ${file} failed: ${e.message}`);
             }
         }
     });
 }
 
-// Run everything
-(async () => {
-    await setup();
-    loadCommands();
-    console.log("✅ All commands loaded!");
-})();
+loadBot().catch(console.error);
  //============================================================================//
 
  adams.ev.on("messages.upsert", async ({ messages }) => {
