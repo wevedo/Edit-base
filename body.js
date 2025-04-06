@@ -13,9 +13,8 @@ ______     __     __     __    __        __  __     __    __     _____
 
                    
 const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, superUser, imageMessage, CommandSystem, repondre,  verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
-const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
-const { createContext } = require("./utils/helper");
+const { createContext } = require("./Ibrahim/helper");
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const conf = require("./config");
@@ -42,7 +41,7 @@ const app = express();
 let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
-app.use(express.static("public"));
+app.use(express.static("adams"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}ms🚀`));
 
@@ -61,7 +60,7 @@ function atbverifierEtatJid(jid) {
 
 async function authentification() {
     try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
+        if (!fs.existsSync(__dirname + "/adams/creds.json")) {
             console.log("Bwm xmd session connected ✅");
             // Split the session strihhhhng into header and Base64 data
             const [header, b64data] = conf.session.split(';;;'); 
@@ -70,18 +69,18 @@ async function authentification() {
             if (header === "BWM-XMD" && b64data) {
                 let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
                 let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
+                fs.writeFileSync(__dirname + "/adams/creds.json", decompressedData, "utf8"); // Save to file
             } else {
                 throw new Error("Invalid session format");
             }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
+        } else if (fs.existsSync(__dirname + "/adams/creds.json") && conf.session !== "zokk") {
             console.log("Updating existing session...");
             const [header, b64data] = conf.session.split(';;;'); 
 
             if (header === "BWM-XMD" && b64data) {
                 let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
                 let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
+                fs.writeFileSync(__dirname + "/adams/creds.json", decompressedData, "utf8");
             } else {
                 throw new Error("Invalid session format");
             }
@@ -103,7 +102,7 @@ const store = makeInMemoryStore({
 
 async function main() {
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
+    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/adams");
     
     const sockOptions = {
         version,
@@ -263,10 +262,6 @@ try {
 }
 
  //============================================================================//
-
-const STATE = conf.PRESENCE; 
-
-
 
  adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
