@@ -5,7 +5,7 @@ const AdmZip = require('adm-zip');
 const axios = require('axios');
 
 // Configuration
-const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/Edit-base/main/bwmxmd.json';
+const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/megalorder/refs/heads/main/bwmxmd.json';
 const ZIP_FILE_NAME = 'mega-main.zip';
 const ENTRY_FILE = 'body.js'; // Your main bot file
 
