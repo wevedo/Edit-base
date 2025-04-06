@@ -251,7 +251,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
 console.log("Loading Bwm xmd Commands...\n");
 try {
-    const taskflowPath = path.join(__dirname, "Taskflow");
+    const taskflowPath = path.join(__dirname, "adams");
     fs.readdirSync(taskflowPath).forEach((fichier) => {
         if (path.extname(fichier).toLowerCase() === ".js") {
             try {
