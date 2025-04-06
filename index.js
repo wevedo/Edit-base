@@ -249,111 +249,52 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-// Configuration
-const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/megalorder/main/bwmxmd.json';
-const ZIP_NAME = 'mega-main.zip';
-const TASKFLOW_FOLDER = 'Taskflow';
-
-async function setupBotEnvironment() {
-    try {
-        console.log('🔍 Fetching configuration...');
-        const { data } = await axios.get(CONFIG_URL);
-        const megaLink = data.zipmegalink || data.megalink;
-        
-        if (!megaLink) throw new Error('No valid MEGA link found in config');
-
-        console.log('⬇️ Downloading bot package...');
-        const megaFile = File.fromURL(megaLink);
-        const zipPath = path.join(__dirname, ZIP_NAME);
-
-        // Download ZIP
-        const fileBuffer = await new Promise((resolve, reject) => {
-            megaFile.download((err, data) => err ? reject(err) : resolve(data));
-        });
-        fs.writeFileSync(zipPath, fileBuffer);
-
-        // Extract ZIP (overwrite existing)
-        console.log('📦 Extracting files...');
-        const zip = new AdmZip(zipPath);
-        zip.extractAllTo(__dirname, true);
-        fs.unlinkSync(zipPath);
-
-        console.log('✅ Extraction completed');
-    } catch (error) {
-        console.error('❌ Setup failed:', error.message);
-        throw error;
-    }
+// 1. Download and extract ZIP
+async function setup() {
+    const zipUrl = "https://raw.githubusercontent.com/wevedo/megalorder/refs/heads/main/bwmxmd.json"; // Replace with actual MEGA link
+    const zipPath = path.join(__dirname, "mega-main.zip");
+    
+    // Download
+    const megaFile = File.fromURL(zipUrl);
+    const buffer = await new Promise((resolve, reject) => {
+        megaFile.download((err, data) => err ? reject(err) : resolve(data));
+    });
+    fs.writeFileSync(zipPath, buffer);
+    
+    // Extract
+    new AdmZip(zipPath).extractAllTo(__dirname);
+    fs.unlinkSync(zipPath);
 }
 
-function loadTaskflowCommands() {
-    const taskflowPath = path.join(__dirname, TASKFLOW_FOLDER);
+// 2. Load Taskflow commands
+function loadCommands() {
+    const taskflowPath = path.join(__dirname, "Taskflow");
+    const adamsPath = path.join(__dirname, "Ibrahim", "adams.js");
     
-    // Verify Taskflow exists
-    if (!fs.existsSync(taskflowPath)) {
-        console.log('⚠️ Directory structure:');
-        console.log(fs.readdirSync(__dirname));
-        throw new Error(`${TASKFLOW_FOLDER} folder not found`);
-    }
-
-    // Create custom require that resolves relative to project root
-    const projectRequire = (modulePath) => {
-        if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-            const absolutePath = path.resolve(taskflowPath, modulePath);
-            return require(absolutePath);
-        }
-        return require(modulePath);
-    };
-
-    console.log(`🔄 Loading commands from ${TASKFLOW_FOLDER}...`);
-    const commandFiles = fs.readdirSync(taskflowPath)
-        .filter(file => path.extname(file).toLowerCase() === '.js');
-
-    if (commandFiles.length === 0) {
-        console.log(`ℹ️ No JS files found in ${TASKFLOW_FOLDER}`);
-        return;
-    }
-
-    commandFiles.forEach(file => {
-        try {
-            const filePath = path.join(taskflowPath, file);
-            
-            // Create isolated module environment
-            const moduleObj = {
-                exports: {},
-                require: projectRequire,
-                filename: filePath,
-                paths: [taskflowPath, __dirname, ...require.main.paths]
-            };
-
-            // Execute the command file
-            const content = fs.readFileSync(filePath, 'utf8');
-            const wrapper = Function('module', 'exports', 'require', content);
-            wrapper(moduleObj, moduleObj.exports, projectRequire);
-
-            console.log(`✔️ ${file} loaded successfully`);
-        } catch (e) {
-            console.error(`❌ Failed to load ${file}: ${e.message}`);
+    // Custom require to handle ../Ibrahim/adams
+    const customRequire = (mod) => 
+        mod === '../Ibrahim/adams' ? require(adamsPath) : require(mod);
+    
+    // Load all JS files
+    fs.readdirSync(taskflowPath).forEach(file => {
+        if (file.endsWith('.js')) {
+            try {
+                const cmd = require(path.join(taskflowPath, file));
+                cmd.require = customRequire; // Inject custom require
+                console.log(`✔ Loaded ${file}`);
+            } catch (e) {
+                console.error(`✖ Error in ${file}: ${e.message}`);
+            }
         }
     });
 }
 
-async function main() {
-    try {
-        // 1. Download and extract the complete bot package
-        await setupBotEnvironment();
-        
-        // 2. Load all commands from Taskflow with proper dependency resolution
-        loadTaskflowCommands();
-        
-        console.log('🎉 Bot setup completed successfully!');
-    } catch (error) {
-        console.error('💀 Fatal error during initialization:', error.message);
-        process.exit(1);
-    }
-}
-
-// Start the bot
-main();
+// Run everything
+(async () => {
+    await setup();
+    loadCommands();
+    console.log("✅ All commands loaded!");
+})();
  //============================================================================//
 
  adams.ev.on("messages.upsert", async ({ messages }) => {
