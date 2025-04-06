@@ -1,6 +1,3 @@
-
-// utils/contextManager.js
-
 const NEWS_LETTER_JID = "120363285388090068@newsletter"; // Replace with your real one
 const BOT_NAME = "BWM-XMD";
 const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
