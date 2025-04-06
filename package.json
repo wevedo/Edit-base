@@ -46,6 +46,7 @@
     "g-i-s": "^2.1.7",
     "gist": "^0.2.0",
     "genius-lyrics": "^4.4.3",
+    "extract-zip":"^0.5.16"
     "google-it": "^1.6.4",
     "google-tts-api": "latest",
     "unlimited-ai": "^6.0.0",
