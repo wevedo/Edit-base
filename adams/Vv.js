@@ -3,7 +3,7 @@ const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const fs = require('fs-extra');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
-const { createContext } = require('../utils/helper');
+const { createContext } = require('../helper/helper');
 
 // Define bot JID
 const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
