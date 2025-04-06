@@ -248,60 +248,66 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
  //============================================================================================================
 
 console.log("Loading Bwm xmd Commands...\n");
+const { execSync } = require('child_process');
 
 async function loadRemoteCommands() {
-    const repoOwner = 'wevedo';
-    const repoName = 'simply_html';
-    const branch = 'main';
-    const folderPath = 'Taskflow'; // Path to the Taskflow folder in the repo
-    
-    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}?ref=${branch}`;
-    
+    const repoUrl = 'https://github.com/wevedo/simply_html.git';
+    const tempRepoPath = path.join(__dirname, 'temp_repo');
+    const taskflowPath = path.join(tempRepoPath, 'Taskflow');
+
     try {
-        console.log('🌐 Fetching remote Taskflow files...');
-        
-        const files = await new Promise((resolve, reject) => {
-            https.get(apiUrl, {
-                headers: {
-                    'User-Agent': 'Node.js'
-                }
-            }, (res) => {
-                let data = '';
-                res.on('data', (chunk) => data += chunk);
-                res.on('end', () => {
-                    if (res.statusCode === 200) {
-                        resolve(JSON.parse(data));
-                    } else {
-                        reject(new Error(`GitHub API responded with ${res.statusCode}: ${data}`));
-                    }
-                });
-            }).on('error', reject);
-        });
+        // Clone the entire repository (requires git installed)
+        console.log('⬇️ Cloning repository...');
+        execSync(`git clone --depth 1 ${repoUrl} ${tempRepoPath}`);
+
+        // Load commands from Taskflow folder with proper require context
+        console.log('🔍 Loading commands from remote Taskflow...');
+        const files = fs.readdirSync(taskflowPath);
+
+        // Create a custom require function that resolves paths relative to the repo
+        const customRequire = (modulePath) => {
+            // Resolve paths relative to the repository root
+            if (modulePath.startsWith('../')) {
+                const absolutePath = path.resolve(taskflowPath, modulePath);
+                return require(absolutePath);
+            }
+            return require(modulePath);
+        };
 
         for (const file of files) {
-            if (file.type === 'file' && path.extname(file.name).toLowerCase() === '.js') {
+            if (path.extname(file).toLowerCase() === '.js') {
                 try {
-                    const fileContent = await new Promise((resolve, reject) => {
-                        https.get(file.download_url, (res) => {
-                            let data = '';
-                            res.on('data', (chunk) => data += chunk);
-                            res.on('end', () => resolve(data));
-                        }).on('error', reject);
-                    });
+                    // Create a custom module environment
+                    const moduleObj = {
+                        exports: {},
+                        require: customRequire,
+                        filename: path.join(taskflowPath, file),
+                        paths: [taskflowPath, ...require.main.paths]
+                    };
 
-                    // Create a temporary module
-                    const module = { exports: {} };
-                    const wrapper = Function('module', 'exports', 'require', fileContent);
-                    wrapper(module, module.exports, require);
-                    
-                    console.log(`✔️ ${file.name} loaded successfully`);
+                    // Read and execute the file
+                    const content = fs.readFileSync(path.join(taskflowPath, file), 'utf8');
+                    const wrapper = Function('module', 'exports', 'require', content);
+                    wrapper(moduleObj, moduleObj.exports, customRequire);
+
+                    console.log(`✔️ ${file} loaded successfully`);
                 } catch (e) {
-                    console.error(`❌ Failed to load ${file.name}: ${e.message}`);
+                    console.error(`❌ Failed to load ${file}: ${e.message}`);
                 }
             }
         }
+
+        // Clean up
+        execSync(`rm -rf ${tempRepoPath}`);
     } catch (error) {
         console.error('❌ Error loading remote commands:', error.message);
+        try {
+            if (fs.existsSync(tempRepoPath)) {
+                execSync(`rm -rf ${tempRepoPath}`);
+            }
+        } catch (cleanupError) {
+            console.error('❌ Cleanup failed:', cleanupError.message);
+        }
     }
 }
 
