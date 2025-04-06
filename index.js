@@ -250,17 +250,17 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
  //============================================================================================================
 
 // Configuration
-const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/megalorder/refs/heads/main/bwmxmd.json';
+const CONFIG_URL = 'https://raw.githubusercontent.com/wevedo/megalorder/main/bwmxmd.json';
 const ZIP_NAME = 'mega-main.zip';
 const TASKFLOW_FOLDER = 'Taskflow';
 
-async function downloadAndExtractBot() {
+async function setupBotEnvironment() {
     try {
-        console.log('📡 Fetching download link...');
+        console.log('🔍 Fetching configuration...');
         const { data } = await axios.get(CONFIG_URL);
         const megaLink = data.zipmegalink || data.megalink;
         
-        if (!megaLink) throw new Error('No MEGA link found in config');
+        if (!megaLink) throw new Error('No valid MEGA link found in config');
 
         console.log('⬇️ Downloading bot package...');
         const megaFile = File.fromURL(megaLink);
@@ -272,7 +272,7 @@ async function downloadAndExtractBot() {
         });
         fs.writeFileSync(zipPath, fileBuffer);
 
-        // Extract ZIP (overwrites existing files)
+        // Extract ZIP (overwrite existing)
         console.log('📦 Extracting files...');
         const zip = new AdmZip(zipPath);
         zip.extractAllTo(__dirname, true);
@@ -280,69 +280,79 @@ async function downloadAndExtractBot() {
 
         console.log('✅ Extraction completed');
     } catch (error) {
-        console.error('❌ Download/extraction failed:', error.message);
+        console.error('❌ Setup failed:', error.message);
         throw error;
     }
 }
 
 function loadTaskflowCommands() {
-    try {
-        const taskflowPath = path.join(__dirname, TASKFLOW_FOLDER);
-        
-        // Create custom require function that resolves paths relative to extraction root
-        const customRequire = (modulePath) => {
-            if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
-                const absolutePath = path.resolve(taskflowPath, modulePath);
-                return require(absolutePath);
-            }
-            return require(modulePath);
-        };
-
-        console.log(`🔄 Loading commands from ${TASKFLOW_FOLDER}...`);
-        fs.readdirSync(taskflowPath).forEach((file) => {
-            if (path.extname(file).toLowerCase() === '.js') {
-                try {
-                    // Create module context
-                    const moduleObj = {
-                        exports: {},
-                        require: customRequire,
-                        filename: path.join(taskflowPath, file),
-                        paths: [taskflowPath, ...require.main.paths]
-                    };
-
-                    // Load and execute the file
-                    const content = fs.readFileSync(path.join(taskflowPath, file), 'utf8');
-                    const wrapper = Function('module', 'exports', 'require', content);
-                    wrapper(moduleObj, moduleObj.exports, customRequire);
-
-                    console.log(`✔️ ${file} loaded successfully`);
-                } catch (e) {
-                    console.error(`❌ Failed to load ${file}: ${e.message}`);
-                }
-            }
-        });
-    } catch (error) {
-        console.error(`❌ Error reading ${TASKFLOW_FOLDER} folder:`, error.message);
-        throw error;
+    const taskflowPath = path.join(__dirname, TASKFLOW_FOLDER);
+    
+    // Verify Taskflow exists
+    if (!fs.existsSync(taskflowPath)) {
+        console.log('⚠️ Directory structure:');
+        console.log(fs.readdirSync(__dirname));
+        throw new Error(`${TASKFLOW_FOLDER} folder not found`);
     }
+
+    // Create custom require that resolves relative to project root
+    const projectRequire = (modulePath) => {
+        if (modulePath.startsWith('./') || modulePath.startsWith('../')) {
+            const absolutePath = path.resolve(taskflowPath, modulePath);
+            return require(absolutePath);
+        }
+        return require(modulePath);
+    };
+
+    console.log(`🔄 Loading commands from ${TASKFLOW_FOLDER}...`);
+    const commandFiles = fs.readdirSync(taskflowPath)
+        .filter(file => path.extname(file).toLowerCase() === '.js');
+
+    if (commandFiles.length === 0) {
+        console.log(`ℹ️ No JS files found in ${TASKFLOW_FOLDER}`);
+        return;
+    }
+
+    commandFiles.forEach(file => {
+        try {
+            const filePath = path.join(taskflowPath, file);
+            
+            // Create isolated module environment
+            const moduleObj = {
+                exports: {},
+                require: projectRequire,
+                filename: filePath,
+                paths: [taskflowPath, __dirname, ...require.main.paths]
+            };
+
+            // Execute the command file
+            const content = fs.readFileSync(filePath, 'utf8');
+            const wrapper = Function('module', 'exports', 'require', content);
+            wrapper(moduleObj, moduleObj.exports, projectRequire);
+
+            console.log(`✔️ ${file} loaded successfully`);
+        } catch (e) {
+            console.error(`❌ Failed to load ${file}: ${e.message}`);
+        }
+    });
 }
 
 async function main() {
     try {
-        // 1. Download and extract the bot package
-        await downloadAndExtractBot();
+        // 1. Download and extract the complete bot package
+        await setupBotEnvironment();
         
-        // 2. Load commands from Taskflow folder with proper require resolution
+        // 2. Load all commands from Taskflow with proper dependency resolution
         loadTaskflowCommands();
         
-        console.log('🎉 All commands loaded successfully!');
+        console.log('🎉 Bot setup completed successfully!');
     } catch (error) {
-        console.error('💀 Critical error during setup:', error.message);
+        console.error('💀 Fatal error during initialization:', error.message);
         process.exit(1);
     }
 }
 
-// Start the process
+// Start the bot
 main();
  //============================================================================//
 
