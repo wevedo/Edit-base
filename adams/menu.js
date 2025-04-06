@@ -22,7 +22,7 @@ const menuImages = [
     "https://files.catbox.moe/xx6ags.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+const footer = "\n\n┌─❖\n│\n└┬❖\n┌┤✑\n│└────────────┈ ⳹\n│ > © sɪʀ ɪʙʀᴀʜɪᴍ\n└─────────────────┈ ⳹\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
@@ -38,13 +38,14 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage (ensures commands are stored only once)
+// Command list storage
 const commandList = {};
 let commandsStored = false;
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { nomAuteurMessage, ms, repondre } = commandeOptions;
+    let { nomAuteurMessage, ms, repondre, auteurMsg } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
+    const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
 
     // Store commands only once
     if (!commandsStored) {
@@ -53,7 +54,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
             if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
             commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
         });
-        commandsStored = true; // Prevents further storing
+        commandsStored = true;
     }
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -62,7 +63,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const totalUsers = await fetchGitHubStats();
     const image = randomImage();
 
-    // Dynamic Greeting Based on Time
+    // Dynamic Greeting
     const hour = moment().hour();
     let greeting = "🌙 *Good Night! See you tomorrow!*";
     if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
@@ -92,60 +93,90 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🎌 ANIME MENU": ["WEEB"],
     };
 
-    // Send Main Menu as Quote Reply with Random Image
+    // Create vCard for sender
+    const senderVCard = {
+        key: { 
+            fromMe: false, 
+            participant: `0@s.whatsapp.net`, 
+            remoteJid: 'status@broadcast' 
+        },
+        message: {
+            contactMessage: {
+                displayName: contactName,
+                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${contactName};;;\nFN:${contactName}\nitem1.TEL;waid=${auteurMsg.split('@')[0]}:${auteurMsg.split('@')[0]}\nitem1.X-ABLabel:Phone\nEND:VCARD`,
+            },
+        },
+    };
+
+    // Send Main Menu with Enhanced Context
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
-╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
+┌─❖ 𓆩 ⚡ 𓆪 ❖─┐
        𝐁𝐖𝐌 𝐗𝐌𝐃    
-╰─❖ 𓆩 ⚡ 𓆪 ❖─╯  
-╭─❖
-┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
-┃📅 ᴅᴀᴛᴇ: ${date}
-┃⏰ ᴛɪᴍᴇ: ${time}
-┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
-╰─❖
+└─❖ 𓆩 ⚡ 𓆪 ❖─┘  
+┌─❖
+│🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${contactName}
+│📅 ᴅᴀᴛᴇ: ${date}
+│⏰ ᴛɪᴍᴇ: ${time}
+│👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
+└─❖
 
 ${greeting}
 
-‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
+📜 *ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ᴄᴀᴛᴇɢᴏʀʏ ɴᴜᴍʙᴇʀ*
 
-
-📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
-
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1}. ${cat}`).join("\n")}
+${footer}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true, mentionedJid: ["120363285388090068@newsletter"] }, // Newsletter included
+        contextInfo: { 
+            forwardingScore: 999, 
+            isForwarded: true, 
+            mentionedJid: [auteurMsg],
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+            },
+            externalAdReply: senderVCard
+        }
     }, { quoted: ms });
 
-    // **Category Selection Listener**
+    // Category Selection Listener
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
         if (!message.message || !message.message.extendedTextMessage) return;
 
         const responseText = message.message.extendedTextMessage.text.trim();
-        if (
-            message.message.extendedTextMessage.contextInfo &&
-            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
-        ) {
+        if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
             const selectedIndex = parseInt(responseText);
             const categoryKeys = Object.keys(categoryGroups);
 
-            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
-                return repondre("*❌ Invalid number. Please select a valid category.*");
+            if (isNaN(selectedIndex) return repondre("*❌ Please reply with a number*");
+            if (selectedIndex < 1 || selectedIndex > categoryKeys.length) {
+                return repondre(`*❌ Invalid number. Use 1-${categoryKeys.length}*`);
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
             const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
-            const categoryImage = randomImage(); // Random image for category selection
+            const categoryImage = randomImage();
 
-            // Display All Commands in Selected Category
             await zk.sendMessage(dest, {
                 image: { url: categoryImage },
                 caption: combinedCommands.length
-                    ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n\n")}${footer}`
-                    : `⚠️ No commands found for ${selectedCategory}.`,
-                contextInfo: { forwardingScore: 999, isForwarded: true },
+                    ? `📜 *${selectedCategory}*\n\n${combinedCommands.join("\n")}\n${footer}`
+                    : `⚠️ No commands found for ${selectedCategory}`,
+                contextInfo: { 
+                    forwardingScore: 999, 
+                    isForwarded: true,
+                    mentionedJid: [auteurMsg],
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363285388090068@newsletter",
+                        newsletterName: "BWM-XMD",
+                        serverMessageId: Math.floor(100000 + Math.random() * 900000),
+                    },
+                    externalAdReply: senderVCard
+                }
             }, { quoted: message });
         }
     });
@@ -156,5 +187,10 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
         audio: { url: audioUrl },
         mimetype: "audio/mpeg",
         ptt: true,
+        contextInfo: {
+            mentionedJid: [auteurMsg],
+            forwardingScore: 999,
+            isForwarded: true
+        }
     });
 });
