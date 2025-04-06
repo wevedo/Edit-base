@@ -249,83 +249,22 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-async function loadBot() {
-    try {
-        // 1. Get MEGA link from JSON
-        console.log('🔗 Getting MEGA download link...');
-        const { data } = await axios.get('https://raw.githubusercontent.com/wevedo/megalorder/main/bwmxmd.json');
-        const megaLink = data.zipmegalink || data.megalink;
-        
-        if (!megaLink) throw new Error('No MEGA link found in JSON');
-
-        // 2. Download ZIP
-        console.log('⬇️ Downloading ZIP file...');
-        const zipBuffer = await new Promise((resolve, reject) => {
-            File.fromURL(megaLink).download((err, data) => err ? reject(err) : resolve(data));
-        });
-        
-        // 3. Extract ZIP
-        console.log('📦 Extracting files...');
-        fs.writeFileSync('temp.zip', zipBuffer);
-        const zip = new AdmZip('temp.zip');
-        zip.extractAllTo(__dirname);
-        fs.unlinkSync('temp.zip');
-
-        // 4. Set correct paths (everything is in mega-main folder)
-        const basePath = path.join(__dirname, 'mega-main');
-        const taskflowPath = path.join(basePath, 'Taskflow');
-        const adamsPath = path.join(basePath, 'Ibrahim', 'adams.js');
-        
-        if (!fs.existsSync(taskflowPath)) {
-            console.log('⚠️ Contents of mega-main folder:');
-            console.log(fs.readdirSync(basePath));
-            throw new Error('Taskflow folder not found in mega-main');
-        }
-
-        if (!fs.existsSync(adamsPath)) {
-            throw new Error('Ibrahim/adams.js not found in mega-main');
-        }
-
-        // 5. Load all Taskflow commands
-        console.log('🔄 Loading commands from Taskflow...');
-        const commandFiles = fs.readdirSync(taskflowPath).filter(file => file.endsWith('.js'));
-        
-        if (commandFiles.length === 0) {
-            console.log('ℹ️ No JS files found in Taskflow folder');
-            return;
-        }
-
-        // Create custom require function that works from mega-main base
-        const customRequire = (mod) => {
-            if (mod === '../Ibrahim/adams') return require(adamsPath);
-            return require(mod);
-        };
-
-        // Load each command
-        commandFiles.forEach(file => {
+console.log("Loading Bwm xmd Commands...\n");
+try {
+    const taskflowPath = path.join(__dirname, "Taskflow");
+    fs.readdirSync(taskflowPath).forEach((fichier) => {
+        if (path.extname(fichier).toLowerCase() === ".js") {
             try {
-                const module = { exports: {} };
-                const filePath = path.join(taskflowPath, file);
-                const code = fs.readFileSync(filePath, 'utf8');
-                
-                // Create custom require context
-                const wrapper = new Function('module', 'exports', 'require', code);
-                wrapper(module, module.exports, customRequire);
-                
-                console.log(`✔️ ${file} loaded successfully`);
+                require(path.join(taskflowPath, fichier));
+                console.log(`✔️ ${fichier} installed successfully.`);
             } catch (e) {
-                console.error(`❌ Failed to load ${file}: ${e.message}`);
+                console.error(`❌ Failed to load ${fichier}: ${e.message}`);
             }
-        });
-
-        console.log('✅ All commands loaded successfully!');
-    } catch (error) {
-        console.error('💀 Error:', error.message);
-        process.exit(1);
-    }
+        }
+    });
+} catch (error) {
+    console.error("❌ Error reading Taskflow folder:", error.message);
 }
-
-loadBot();
  //============================================================================//
 
  adams.ev.on("messages.upsert", async ({ messages }) => {
