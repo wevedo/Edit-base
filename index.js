@@ -22,6 +22,7 @@ const axios = require("axios");
 const moment = require("moment-timezone");
 const fs = require("fs-extra");
 const path = require("path");
+const https = require('https');
 const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const evt = require("./Ibrahim/adams");
