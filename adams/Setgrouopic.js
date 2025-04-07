@@ -60,6 +60,7 @@ async function streamToBuffer(stream) {
 adams({
   nomCom: "tomp3",
   categorie: "Media",
+  categorie: "download",
   reaction: "🎵",
   nomFichier: __filename,
 }, async (dest, zk, commandeOptions) => {
@@ -96,6 +97,7 @@ adams(
   {
     nomCom: "online",
     reaction: "🟢",
+   categorie: "Group",
     nomFichier: __filename,
   },
   async (chatId, zk, { ms, repondre }) => {
