@@ -1,5 +1,3 @@
-
-
 const { adams } = require('../Ibrahim/adams');
 const axios = require('axios');
 const fs = require('fs-extra');
@@ -7,317 +5,235 @@ const { mediafireDl } = require("../Ibrahim/Function");
 const conf = require(__dirname + "/../config");
 const ffmpeg = require("fluent-ffmpeg");
 const gis = require('g-i-s');
-const traduire = require("../Ibrahim/traduction") ;
-const ai = require('unlimited-ai');
-adams({
-  nomCom: "twitter",
-  aliases: ["xdl", "tweet"],
-  desc: "to download Twitter",
-  categorie: "Download"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+const ytSearch = require("yt-search");
 
-  const link = arg.join(' ');
-
-  if (!arg[0]) {
-    return repondre('Please insert a Twitter video link.');
-  }
-
-  try {
-    const response = await axios.get(`https://bk9.fun/download/twitter?url=${encodeURIComponent(link)}`);
-
-    if (response.data.status && response.data.BK9.HD) {
-      const videoUrl = response.data.BK9.HD;
-      const username = response.data.BK9.username;
-      const caption = response.data.BK9.caption;
-      const thumbnailUrl = response.data.BK9.thumbnail;
-
-      await zk.sendMessage(dest, {
-        image: { url: thumbnailUrl },
-        caption: `Username: ${username}\nCaption: ${caption}`,
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        caption: 'Twitter video by bwm xmd',
-        gifPlayback: false
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
+// Helper function to extract response from various API formats
+function extractResponse(data) {
+    const possibleFields = ['download_url', 'url', 'result', 'response', 'BK9', 'message', 'data', 'video', 'audio'];
+    for (const field of possibleFields) {
+        if (data[field]) {
+            if (typeof data[field] === 'object') {
+                return extractResponse(data[field]); // Recursively check nested objects
+            }
+            return data[field];
+        }
     }
+    return data; // Return the entire response if no known field found
+}
 
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
+// Generic Downloader Command
+adams({
+    nomCom: "download",
+    aliases: ["dl"],
+    desc: "Download content from various platforms",
+    categorie: "Download"
+}, async (dest, zk, commandeOptions) => {
+    const { ms, repondre, arg } = commandeOptions;
+    const url = arg.join(' ');
+
+    if (!url) return repondre('Please provide a valid URL');
+
+    try {
+        // Detect platform and select appropriate endpoint
+        let apiUrl;
+        if (url.includes('twitter.com') || url.includes('x.com')) {
+            apiUrl = `https://bk9.fun/download/twitter?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('tiktok.com')) {
+            apiUrl = `https://bk9.fun/download/tiktok?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('instagram.com')) {
+            apiUrl = `https://bk9.fun/download/instagram?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            apiUrl = `https://bk9.fun/download/youtube?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('facebook.com')) {
+            apiUrl = `https://bk9.fun/download/fb?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('pinterest.com') || url.includes('pin.it')) {
+            apiUrl = `https://bk9.fun/download/pinterest?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('likee.video')) {
+            apiUrl = `https://bk9.fun/download/likee?url=${encodeURIComponent(url)}`;
+        } else if (url.includes('mediafire.com')) {
+            apiUrl = `https://bk9.fun/download/mediafire?url=${encodeURIComponent(url)}`;
+        } else {
+            return repondre('Unsupported platform. Supported: Twitter, TikTok, Instagram, YouTube, Facebook, Pinterest, Likee, Mediafire');
+        }
+
+        const response = await axios.get(apiUrl, {
+            timeout: 15000,
+            validateStatus: function (status) {
+                return status < 500; // Reject only if status code is >= 500
+            }
+        });
+
+        // Handle various API response formats
+        const responseData = response.data || {};
+        const downloadUrl = extractResponse(responseData);
+
+        if (!downloadUrl) {
+            return repondre('No downloadable content found in the response');
+        }
+
+        // Determine content type
+        const isVideo = downloadUrl.includes('.mp4') || downloadUrl.includes('.mov');
+        const isAudio = downloadUrl.includes('.mp3') || downloadUrl.includes('.m4a');
+        const isImage = downloadUrl.includes('.jpg') || downloadUrl.includes('.png') || downloadUrl.includes('.webp');
+
+        // Send appropriate media type
+        if (isVideo) {
+            await zk.sendMessage(dest, {
+                video: { url: downloadUrl },
+                caption: 'Downloaded by BWM XMD',
+                gifPlayback: false
+            }, { quoted: ms });
+        } else if (isAudio) {
+            await zk.sendMessage(dest, {
+                audio: { url: downloadUrl },
+                mimetype: 'audio/mpeg',
+                fileName: 'downloaded_audio.mp3'
+            }, { quoted: ms });
+        } else if (isImage) {
+            await zk.sendMessage(dest, {
+                image: { url: downloadUrl },
+                caption: 'Downloaded by BWM XMD'
+            }, { quoted: ms });
+        } else {
+            // Default to document for unknown types
+            await zk.sendMessage(dest, {
+                document: { url: downloadUrl },
+                fileName: 'downloaded_file'
+            }, { quoted: ms });
+        }
+
+    } catch (error) {
+        console.error('Download error:', error);
+        
+        let errorMessage = 'Failed to download content';
+        if (error.response) {
+            // Handle HTTP errors
+            if (error.response.status === 400) {
+                errorMessage = 'Invalid URL or request format';
+            } else if (error.response.status === 404) {
+                errorMessage = 'Content not found';
+            } else if (error.response.data && error.response.data.message) {
+                errorMessage = error.response.data.message;
+            }
+        } else if (error.message.includes('timeout')) {
+            errorMessage = 'Request timed out. Please try again.';
+        }
+        
+        repondre(`❌ ${errorMessage}`);
+    }
 });
 
-adams({
-  nomCom: "like",
-  categorie: "Download"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-
-  const link = arg.join(' ');
-
-  if (!arg[0]) {
-    return repondre('Please insert a Likee video link.');
-  }
-
-  try {
-    const response = await axios.get(`https://bk9.fun/download/likee?url=${encodeURIComponent(link)}`);
-
-    if (response.data.status && response.data.BK9) {
-      const videoUrl = response.data.BK9.withoutwatermark;
-      const title = response.data.BK9.title;
-      const thumbnailUrl = response.data.BK9.thumbnail;
-
-      await zk.sendMessage(dest, {
-        image: { url: thumbnailUrl },
-        caption: `Title: ${title}`,
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        caption: "Bwm xmd",
-        gifPlayback: false
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
+function extractField(data, field) {
+    if (data[field]) return data[field];
+    if (typeof data === 'object') {
+        for (const key in data) {
+            if (typeof data[key] === 'object') {
+                const result = extractField(data[key], field);
+                if (result) return result;
+            }
+        }
     }
-
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
-});
-
+    return null;
+}
 
 adams({
-  nomCom: "capcut",
-  categorie: "Download"
+    nomCom: "ytmp3",
+    aliases: ["ytaudio"],
+    desc: "Download YouTube audio as MP3",
+    categorie: "Download"
 }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+    const { ms, repondre, arg } = commandeOptions;
+    const url = arg.join(' ');
 
-  const link = arg.join(' ');
+    if (!url) return repondre('Please provide a YouTube URL');
 
-  if (!arg[0]) {
-    return repondre('Please insert a CapCut video link.');
-  }
+    try {
+        const response = await axios.get(`https://bk9.fun/download/ytmp3?url=${encodeURIComponent(url)}&type=mp3`);
+        const audioUrl = extractField(response.data, 'downloadUrl') || extractField(response.data, 'url') || extractField(response.data, 'audio');
+        
+        if (!audioUrl) throw new Error('No audio URL found in response');
 
-  try {
-    const response = await axios.get(`https://bk9.fun/download/capcut?url=${encodeURIComponent(link)}`);
+        await zk.sendMessage(dest, {
+            audio: { url: audioUrl },
+            mimetype: 'audio/mpeg',
+            fileName: 'youtube_audio.mp3',
+            caption: 'YouTube audio downloaded by BWM XMD'
+        }, { quoted: ms });
 
-    if (response.data.status && response.data.BK9) {
-      const videoUrl = response.data.BK9.video;
-      const title = response.data.BK9.title || "CapCut Video";
-      const description = response.data.BK9.description || "No description provided.";
-      const usage = response.data.BK9.usage || "No usage information provided.";
-
-      await zk.sendMessage(dest, {
-        text: `Title: ${title}\nDescription: ${description}\nUsage: ${usage}`,
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        caption: "Bwm xmd",
-        gifPlayback: false
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
+    } catch (error) {
+        console.error('YouTube MP3 download error:', error);
+        repondre('❌ Failed to download YouTube audio. Please check the URL and try again.');
     }
-
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
-});
-
-
-adams({
-  nomCom: "pinterest",
-  categorie: "Download"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-
-  const link = arg.join(' ');
-
-  if (!arg[0]) {
-    return repondre('Please insert a Pinterest video link.');
-  }
-
-  try {
-    const response = await axios.get(`https://bk9.fun/download/pinterest?url=${encodeURIComponent(link)}`);
-
-    if (response.data.status && response.data.BK9) {
-      const videoUrl = response.data.BK9[0].url;
-      const imageUrl = response.data.BK9[1].url;
-
-      await zk.sendMessage(dest, {
-        image: { url: imageUrl },
-        caption: conf.BOT,
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        caption: "Bwm xmd Pinterest",
-        gifPlayback: false
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
-    }
-
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
-});
-
-adams({
-  nomCom: "tiktok",
-  aliases: ["tiktokdl2", "tikdl2"],
-  categorie: "Download"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-
-  const link = arg.join(' ');
-
-  if (!arg[0]) {
-    return repondre('Please insert a TikTok video link.');
-  }
-
-  try {
-    const response = await axios.get(`https://bk9.fun/download/tiktok?url=${encodeURIComponent(link)}`);
-
-    if (response.data.status && response.data.BK9) {
-      const videoUrl = response.data.BK9.BK9;
-      const description = response.data.BK9.desc;
-      const commentCount = response.data.BK9.comment_count;
-      const likesCount = response.data.BK9.likes_count;
-      const uid = response.data.BK9.uid;
-      const nickname = response.data.BK9.nickname;
-      const musicTitle = response.data.BK9.music_info.title;
-
-      await zk.sendMessage(dest, {
-        text: "Dowloding...!",
-      }, { quoted: ms });
-
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        caption: `TikTok video by Bwm xmd\n About: ${description}\n Name: ${nickname}`,
-        gifPlayback: false
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
-    }
-
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
 });
 
 
-
-
-
 adams({
-  nomCom: "xnxx",
-  categorie: "Download"
+    nomCom: "ringtone",
+    aliases: ["rtone"],
+    desc: "Download ringtones",
+    categorie: "Download"
 }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+    const { ms, repondre, arg } = commandeOptions;
+    const query = arg.join(' ');
 
-  const videoLink = arg.join(' ');
+    if (!query) return repondre('Please provide a search term (e.g. Quran)');
 
-  if (!arg[0]) {
-    return repondre('Please insert a video link.');
-  }
+    try {
+        const response = await axios.get(`https://bk9.fun/download/RingTone?q=${encodeURIComponent(query)}`);
+        const audioUrl = extractField(response.data, 'audio') || extractField(response.data, 'url') || extractField(response.data, 'download_url');
+        
+        if (!audioUrl) throw new Error('No audio URL found in response');
 
-  try {
-    const response = await axios.get(`https://api.davidcyriltech.my.id/xvideo?url=${encodeURIComponent(videoLink)}`);
+        await zk.sendMessage(dest, {
+            audio: { url: audioUrl },
+            mimetype: 'audio/mpeg',
+            fileName: 'ringtone.mp3',
+            caption: 'Ringtone downloaded by BWM XMD'
+        }, { quoted: ms });
 
-    if (response.data.success) {
-      const title = response.data.title;
-      const thumbnail = response.data.thumbnail;
-      const downloadUrl = response.data.download_url;
-
-      await zk.sendMessage(dest, {
-        video: { url: downloadUrl },
-        caption: title,
-        contextInfo: {
-          externalAdReply: {
-            title: "Video Downloader",
-            body: title,
-            thumbnailUrl: thumbnail,
-            sourceUrl: "Bwm xmd xvideo",
-            mediaType: 1,
-            showAdAttribution: true, // Verified badge
-          },
-        },
-      }, { quoted: ms });
-
-    } else {
-      repondre('Failed to retrieve video from the provided link.');
+    } catch (error) {
+        console.error('Ringtone download error:', error);
+        repondre('❌ Failed to download ringtone. Please try a different search term.');
     }
-
-  } catch (e) {
-    repondre(`An error occurred during download: ${e.message}`);
-  }
 });
 
 
-
-
+// APK Downloader (Specialized)
 adams({
-  'nomCom': 'apk',
-  'aliases': ['app', 'playstore'],
-  'reaction': 'ðŸ—‚',
-  'categorie': 'Download'
-}, async (groupId, client, context) => {
-  const { repondre, arg, ms } = context;
+    nomCom: "apk",
+    aliases: ["apkdl"],
+    desc: "Download APK files",
+    categorie: "Download"
+}, async (dest, zk, commandeOptions) => {
+    const { ms, repondre, arg } = commandeOptions;
+    const packageName = arg.join(' ');
 
-  try {
-    // Check if app name is provided
-    const appName = arg.join(" ");
-    if (!appName) {
-      return repondre("Please provide an app name.");
+    if (!packageName) return repondre('Please provide an app package name (e.g. com.whatsapp)');
+
+    try {
+        const response = await axios.get(`https://bk9.fun/download/apk?id=${encodeURIComponent(packageName)}`, {
+            timeout: 20000 // Longer timeout for APK downloads
+        });
+
+        const responseData = response.data || {};
+        const apkUrl = extractResponse(responseData);
+        const appName = responseData.name || 'app';
+
+        if (!apkUrl) {
+            return repondre('APK not found for the specified package');
+        }
+
+        await zk.sendMessage(dest, {
+            document: { url: apkUrl },
+            mimetype: 'application/vnd.android.package-archive',
+            fileName: `${appName}.apk`,
+            caption: `${appName} APK`
+        }, { quoted: ms });
+
+    } catch (error) {
+        console.error('APK download error:', error);
+        repondre('❌ Failed to download APK. Please check the package name and try again.');
     }
-
-    // Fetch app search results from the BK9 API
-    const searchResponse = await axios.get(`https://bk9.fun/search/apk?q=${appName}`);
-    const searchData = searchResponse.data;
-
-    // Check if any results were found
-    if (!searchData.BK9 || searchData.BK9.length === 0) {
-      return repondre("No app found with that name, please try again.");
-    }
-
-    // Fetch the APK details for the first result
-    const appDetailsResponse = await axios.get(`https://bk9.fun/download/apk?id=${searchData.BK9[0].id}`);
-    const appDetails = appDetailsResponse.data;
-
-    // Check if download link is available
-    if (!appDetails.BK9 || !appDetails.BK9.dllink) {
-      return repondre("Unable to find the download link for this app.");
-    }
-
-    // Send the APK file to the group
-    await client.sendMessage(
-      groupId,
-      {
-        document: { url: appDetails.BK9.dllink },
-        fileName: `${appDetails.BK9.name}.apk`,
-        mimetype: "application/vnd.android.package-archive",
-        caption: "BWM-XMD"
-      },
-      { quoted: ms }
-    );
-
-  } catch (error) {
-    // Catch any errors and notify the user
-    console.error("Error during APK download process:", error);
-    repondre("APK download failed. Please try again later.");
-  }
 });
 
 
@@ -325,7 +241,9 @@ adams(
   {
     nomCom: "img",
     categorie: "Search",
-    reaction: "ðŸ“·"
+    categorie: "Download",
+    reaction: "🌎"
+     
   },
   async (dest, zk, commandeOptions) => {
     const { repondre, ms, arg } = commandeOptions;
@@ -372,51 +290,8 @@ adams(
 );
 
 
-adams({
-  nomCom: "gpt",
-  aliases: ["gpt4", "ai"],
-  reaction: '🤔',
-  categorie: "ai"
-}, async (context, message, params) => {
-  const { repondre, arg } = params;  
-  const alpha = arg.join(" ").trim(); 
 
-  if (!alpha) return repondre("Please provide text.");
 
-  let conversationData = [];
 
-  try {
-    const rawData = fs.readFileSync('store.json', 'utf8');
-    if (rawData) {
-      conversationData = JSON.parse(rawData);
-      if (!Array.isArray(conversationData)) {
-        conversationData = [];
-      }
-    }
-  } catch (err) {
-    console.log('No previous conversation found, starting new one.');
-  }
+    
 
-  const model = 'gpt-4-turbo-2024-04-09';
-  const userMessage = { role: 'user', content: alpha };  
-  const systemMessage = { role: 'system', content: 'Your called bwm xmd. You were made by Ibrahim adams. You respond to user commands.' };
-
-  // Ensure that the conversationData is an array before pushing
-  conversationData.push(userMessage);
-  conversationData.push(systemMessage);
-
-  try {
-    const aiResponse = await ai.generate(model, conversationData);
-
-    // Append AI response to the conversation
-    conversationData.push({ role: 'assistant', content: aiResponse });
-
-    // Save the conversation to file
-    fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
-
-    await repondre(aiResponse);
-  } catch (error) {
-    console.error("Error with AI generation: ", error);
-    await repondre("Sorry, there was an error generating the response.");
-  }
-});
