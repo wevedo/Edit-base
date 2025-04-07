@@ -5,7 +5,7 @@ module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
 
-        console.log("Initializing Auto Bio & Anti-Call systems...");
+        //console.log("Initializing Auto Bio & Anti-Call systems...");
 
         let bioInterval = null;
         let activeCallHandler = null;
@@ -20,7 +20,7 @@ module.exports = {
                 const data = response.data;
                 return `🌡️ Temp: ${data.main.temp}°C | 🌫️ ${data.weather[0].description} | 💧 Humidity: ${data.main.humidity}%`;
             } catch (error) {
-                console.error("❌ Error fetching weather data:", error.message);
+               // console.error("❌ Error fetching weather data:", error.message);
                 return "🌡️ Weather unavailable";
             }
         };
@@ -44,9 +44,9 @@ module.exports = {
                 try {
                     const weatherInfo = await fetchWeather();
                     await adams.updateProfileStatus(`👋 BWM XMD ONLINE 🚀 |  \n${weatherInfo}\n📅 ${getCurrentDateTime()}`);
-                    logger.info("Bio updated successfully");
+                   // logger.info("Bio updated successfully");
                 } catch (err) {
-                    logger.error("Bio update failed:", err.message);
+                    //logger.error("Bio update failed:", err.message);
                 }
             };
 
@@ -75,8 +75,8 @@ module.exports = {
         startBioUpdates();
         startCallBlocking();
 
-        console.log("✅ Auto Bio & Anti-Call systems operational");
-        logger.info("Protection systems now active");
+        //console.log("✅ Auto Bio & Anti-Call systems operational");
+       // logger.info("Protection systems now active");
 
         return () => {
             console.log("Shutting down Auto Bio & Anti-Call systems...");
