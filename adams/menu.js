@@ -3,6 +3,7 @@ const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
+const readMore = String.fromCharCode(8206).repeat(4000); 
 
 // GitHub raw audio links
 const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
@@ -11,19 +12,14 @@ const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.le
 
 // Menu images
 const menuImages = [
-    "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
-    "https://bwm-xmd-files.vercel.app/bwmxmd_9s9jr8.jpeg",
-    "https://bwm-xmd-files.vercel.app/bwmxmd_psaclm.jpeg",
-    "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
-    "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
-    "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
-    "https://files.catbox.moe/jwwjd3.jpeg",
-    "https://files.catbox.moe/3k35q4.jpeg",
-    "https://files.catbox.moe/sgl022.jpeg",
-    "https://files.catbox.moe/xx6ags.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd1.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd2.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd3.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd4.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd5.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = "\n\n┌─❖\n│\n└┬❖\n┌┤✑\n│└────────────┈ ⳹\n│ > © sɪʀ ɪʙʀᴀʜɪᴍ\n└─────────────────┈ ⳹\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
@@ -39,14 +35,26 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage
+// Command list storage (ensures commands are stored only once)
 const commandList = {};
 let commandsStored = false;
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { nomAuteurMessage, ms, repondre, auteurMsg } = commandeOptions;
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
     const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
+    const sender = commandeOptions?.sender || (commandeOptions?.ms?.key?.remoteJid || "").replace(/@.+/, '');
+    let { ms, repondre } = commandeOptions;
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+
+    // Contact message for quoted replies
+    const contactMsg = {
+        key: { fromMe: false, participant: `0@s.whatsapp.net`, remoteJid: 'status@broadcast' },
+        message: {
+            contactMessage: {
+                displayName: contactName,
+                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;a,;;;\nFN:${contactName}\nitem1.TEL;waid=${sender}:${sender}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`,
+            },
+        },
+    };
 
     // Store commands only once
     if (!commandsStored) {
@@ -55,7 +63,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
             if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
             commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
         });
-        commandsStored = true;
+        commandsStored = true; // Prevents further storing
     }
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -64,134 +72,134 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const totalUsers = await fetchGitHubStats();
     const image = randomImage();
 
-    // Dynamic Greeting
+    // Dynamic Greeting Based on Time
     const hour = moment().hour();
-    let greeting = "🌙 *Good Night! See you tomorrow!*";
-    if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
-    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
-    else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
+    let greeting = "🌙 *Good Night* 😴";
+    if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning* 🤗";
+    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon* 😊";
+    else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening* 🤠";
 
     // Custom Categories with Emojis
     const categoryGroups = {
-        "🤖 AI MENU": ["ABU"],
-        "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
-        "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
+        "🤖 AI MENU": ["AI", "TTS", "NEWS"],
+        "⚽ SPORTS": ["FOOTBALL", "GAMES"],
+        "📥 DOWNLOAD MENU": ["NEWS", "SEARCH", "DOWNLOAD"],
+        "🛠️ HEROKU": ["CONTROL", "STICKCMD", "TOOLS"],
+        "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
-        "🎮 GAMES MENU": ["GAMES"],
-        "🌍 GENERAL MENU": ["GENERAL"],
+        "🌍 GENERAL MENU": ["GENERAL", "MODS"],
         "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
-        "💻 GITHUB MENU": ["GITHUB"],
-        "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
-        "🔤 LOGO MENU": ["LOGO"],
-        "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS", "AI"],
-        "🔗 CONNECTOR MENU": ["PAIR", "USER"],
-        "🔍 SEARCH MENU": ["NEWS", "IA"],
-        "🗣️ TTS MENU": ["TTS"],
-        "⚙️ UTILITY MENU": ["UTILITY"],
-        "🎌 ANIME MENU": ["WEEB"],
+        "💻 BOT_INFO MENU": ["GITHUB", "USER", "PAIR"],
     };
 
-    // Create vCard for sender
-    const senderVCard = {
-        key: { 
-            fromMe: false, 
-            participant: `0@s.whatsapp.net`, 
-            remoteJid: 'status@broadcast' 
-        },
-        message: {
-            contactMessage: {
-                displayName: contactName,
-                vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;${contactName};;;\nFN:${contactName}\nitem1.TEL;waid=${auteurMsg.split('@')[0]}:${auteurMsg.split('@')[0]}\nitem1.X-ABLabel:Phone\nEND:VCARD`,
-            },
-        },
-    };
-
-    // Send Main Menu with Enhanced Context
+    // Send Main Menu as Quote Reply with Random Image
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
-┌─❖ 𓆩 ⚡ 𓆪 ❖─┐
-       𝐁𝐖𝐌 𝐗𝐌𝐃    
-└─❖ 𓆩 ⚡ 𓆪 ❖─┘  
 ┌─❖
+│ 𝐁𝐖𝐌 𝐗𝐌𝐃    
+└┬❖  
+┌┤ ${greeting}
+│└───────────┈⳹  
 │🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${contactName}
 │📅 ᴅᴀᴛᴇ: ${date}
 │⏰ ᴛɪᴍᴇ: ${time}
-│👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
-└─❖
+│👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}        
+└────────────────┈⳹ 
 
-${greeting}
+> ©Ibrahim Adams
 
-📜 *ʀᴇᴘʟʏ ᴡɪᴛʜ ᴛʜᴇ ᴄᴀᴛᴇɢᴏʀʏ ɴᴜᴍʙᴇʀ*
+${readMore}
 
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1}. ${cat}`).join("\n")}
-${footer}
+📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
+
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
-        contextInfo: { 
-            forwardingScore: 999, 
-            isForwarded: true, 
-            mentionedJid: [auteurMsg],
+        contextInfo: {
+            mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
+            forwardingScore: 999,
+            isForwarded: true,
             forwardedNewsletterMessageInfo: {
                 newsletterJid: "120363285388090068@newsletter",
                 newsletterName: "BWM-XMD",
                 serverMessageId: Math.floor(100000 + Math.random() * 900000),
             },
-            externalAdReply: senderVCard
-        }
-    }, { quoted: ms });
+        },
+    }, { quoted: contactMsg });
 
-    // Category Selection Listener
+    // **Category Selection Listener**
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
         if (!message.message || !message.message.extendedTextMessage) return;
 
         const responseText = message.message.extendedTextMessage.text.trim();
-        if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
+        if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
             const selectedIndex = parseInt(responseText);
             const categoryKeys = Object.keys(categoryGroups);
 
-            if (isNaN(selectedIndex) return repondre("*❌ Please reply with a number*");
-            if (selectedIndex < 1 || selectedIndex > categoryKeys.length) {
-                return repondre(`*❌ Invalid number. Use 1-${categoryKeys.length}*`);
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
+                return repondre("*❌ Invalid number. Please select a valid category.*", { quoted: contactMsg });
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
             const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
-            const categoryImage = randomImage();
+            const categoryImage = randomImage(); // Random image for category selection
 
+            // Display All Commands in Selected Category
             await zk.sendMessage(dest, {
                 image: { url: categoryImage },
                 caption: combinedCommands.length
-                    ? `📜 *${selectedCategory}*\n\n${combinedCommands.join("\n")}\n${footer}`
-                    : `⚠️ No commands found for ${selectedCategory}`,
-                contextInfo: { 
-                    forwardingScore: 999, 
+                    ? `
+┌─❖ 
+│ *${selectedCategory}*:
+└┬❖
+┌┤
+ ${combinedCommands.join("\n\n")}\n└───────────┈⳹\n\n${footer}`
+                    : `⚠️ No commands found for ${selectedCategory}.`,
+                contextInfo: {
+                    mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
+                    forwardingScore: 999,
                     isForwarded: true,
-                    mentionedJid: [auteurMsg],
                     forwardedNewsletterMessageInfo: {
                         newsletterJid: "120363285388090068@newsletter",
                         newsletterName: "BWM-XMD",
                         serverMessageId: Math.floor(100000 + Math.random() * 900000),
                     },
-                    externalAdReply: senderVCard
-                }
-            }, { quoted: message });
+                },
+            }, { quoted: contactMsg });
         }
     });
 
     // Send Random Audio
     const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
-    await zk.sendMessage(dest, {
-        audio: { url: audioUrl },
-        mimetype: "audio/mpeg",
-        ptt: true,
-        contextInfo: {
-            mentionedJid: [auteurMsg],
-            forwardingScore: 999,
-            isForwarded: true
+await zk.sendMessage(dest, {
+    audio: { url: audioUrl },
+    mimetype: "audio/mpeg",
+    ptt: true,
+    contextInfo: {
+        mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: Math.floor(100000 + Math.random() * 900000),
+        },
+    },
+}, { 
+    quoted: {
+        key: {
+            remoteJid: ms.key.remoteJid,
+            fromMe: ms.key.fromMe,
+            id: ms.key.id,
+            participant: ms.key.participant
+        },
+        message: {
+            conversation: "🚀 𝐐𝐔𝐀𝐍𝐓𝐔𝐌 𝐕𝐄𝐑𝐒𝐈𝐎𝐍 🚀"
         }
-    });
+    }
+});
 });
