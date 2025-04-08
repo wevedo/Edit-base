@@ -310,7 +310,7 @@ class ListenerManager {
                     });
                     
                     this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded listener: ${file}`);
+                    //console.log(`Loaded listener: ${file}`);
                 }
             } catch (e) {
                 console.error(`Error loading listener ${file}: ${e.message}`);
@@ -338,7 +338,7 @@ adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
         // Load listeners when connected
         listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('All listeners initialized'))
+            .then(() => console.log('🚀Enjoy quantum speed🌎'))
             .catch(console.error);
     }
     
