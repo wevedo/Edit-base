@@ -311,7 +311,7 @@ class ListenerManager {
                     });
                     
                     this.activeListeners.set(file, cleanup);
-                    //console.log(`Loaded listener: ${file}`);
+                    console.log(`Loaded listener: ${file}`);
                 }
             } catch (e) {
                 console.error(`Error loading listener ${file}: ${e.message}`);
@@ -557,7 +557,7 @@ adams.ev.on("connection.update", ({ connection }) => {
 ┌┤ ǫᴜᴀɴᴛᴜᴍ ᴠᴇʀsɪᴏɴ
 │└────────┈ ⳹  
 │ ✅ Prefix: [ ${conf.PREFIX} ] 
-│ ☣️ Public_mode: *${md}*
+│ ☣️ Mode: *${md}*
 └────────────┈ ⳹  
 │ *ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ*
 │ https://business.bwmxmd.online
