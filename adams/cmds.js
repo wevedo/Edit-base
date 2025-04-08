@@ -1,41 +1,93 @@
 const { adams } = require("../Ibrahim/adams");
+const moment = require("moment-timezone");
+const s = require(__dirname + "/../config");
 
-adams({ nomCom: "cmds", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { ms, repondre, nomAuteurMessage, mybotpic } = commandeOptions;
-    const { cm } = require("../Ibrahim/adams");
-    
-    // Get current time
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    const date = new Date().toLocaleDateString();
-    
-    // Basic menu message
-    const message = `
-*Hey ${nomAuteurMessage}*
+// Register multiple command triggers
+const commandTriggers = ["cmds", "cmd", "commands", "help", "list"];
 
-*BWM-XMD Command Menu*
+commandTriggers.forEach(trigger => {
+    adams({ 
+        nomCom: trigger, 
+        categorie: "General" 
+    }, async (dest, zk, commandeOptions) => {
+        const { ms, repondre, auteurMsg } = commandeOptions;
+        const { cm } = require("../Ibrahim/adams");
+        
+        // Get user's push name or default
+        const userName = commandeOptions?.ms?.pushName || "User";
+        
+        // Format time and date
+        moment.tz.setDefault(s.TZ || "Africa/Nairobi");
+        const time = moment().format("h:mm A");
+        const date = moment().format("DD/MM/YYYY");
+        
+        // Organize commands by category with counts
+        const categories = {};
+        cm.forEach(cmd => {
+            if (!categories[cmd.categorie]) {
+                categories[cmd.categorie] = [];
+            }
+            categories[cmd.categorie].push(cmd.nomCom);
+        });
 
-📅 Date: ${date}
-⏰ Time: ${time}
-
-_Total commands: ${cm.length}_
-
-© Ibrahim Adams
-`;
-
-    try {
-        // Try to send as image if available
-        const pic = mybotpic();
-        if (pic.match(/\.(jpeg|png|jpg)$/i)) {
-            await zk.sendMessage(dest, { 
-                image: { url: pic }, 
-                caption: message 
-            }, { quoted: ms });
-        } else {
-            // Fallback to text message
-            await repondre(message);
+        // Create category summary with counts
+        let categorySummary = "";
+        for (const [category, commands] of Object.entries(categories)) {
+            categorySummary += `▢ ${category.toUpperCase()} (${commands.length})\n`;
         }
-    } catch (e) {
-        console.error("Command menu error:", e);
-        await repondre("An error occurred while showing commands");
-    }
+
+        // Create full numbered command list
+        let fullCommandList = "";
+        let commandCounter = 1;
+        for (const [category, commands] of Object.entries(categories)) {
+            fullCommandList += `\n*【 ${category.toUpperCase()} 】*\n`;
+            commands.forEach(cmd => {
+                fullCommandList += `${commandCounter++}. ${cmd}\n`;
+            });
+        }
+
+        // Newsletter context
+        const newsletterContext = {
+            forwardingScore: 999,
+            isForwarded: true,
+            mentionedJid: [auteurMsg],
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000)
+            }
+        };
+
+        // Main menu message with your requested format
+        const message = `
+┌─❖ 𓆩 ⚡ 𓆪 ❖─┐
+       𝐁𝐖𝐌 𝐗𝐌𝐃    
+└─❖ 𓆩 ⚡ 𓆪 ❖─┘  
+
+👤 ᴜsᴇʀ ɴᴀᴍᴇ: ${userName}
+📅 ᴅᴀᴛᴇ: ${date}
+⏰ ᴛɪᴍᴇ: ${time}
+👥 ʙᴡᴍ ᴜsᴇʀs: ${Object.keys(categories).reduce((acc, curr) => acc + categories[curr].length, 0)}
+
+📊 *CATEGORIES (${Object.keys(categories).length})*
+${categorySummary}
+
+📜 *FULL COMMAND LIST (${cm.length})*
+${fullCommandList}
+
+┌─❖
+│
+└┬❖  
+┌┤✑  𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗕𝗪𝗠 𝗫𝗠𝗗
+│└────────────┈ ⳹        
+│ > © sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+└─────────────────┈ ⳹
+`.trim();
+
+        // Send text message only
+        await zk.sendMessage(dest, {
+            text: message,
+            contextInfo: newsletterContext
+        }, { quoted: ms });
+    });
 });
