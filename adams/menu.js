@@ -19,12 +19,12 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd5.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+const footer = "\n\n©Sir Ibrahim Adams\n\n?Use list or cmd command to see all commands together\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
     try {
-        const repo = "devibraah/BWM-XMD";
+        const repo = "BWM-XMD-QUANTUM";
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
         const forks = response.data.forks_count || 0;
         const stars = response.data.stargazers_count || 0;
@@ -83,7 +83,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const categoryGroups = {
         "🤖 AI MENU": ["AI", "TTS", "NEWS"],
         "⚽ SPORTS": ["FOOTBALL", "GAMES"],
-        "📥 DOWNLOAD MENU": ["NEWS", "SEARCH", "DOWNLOAD"],
+        "📥 DOWNLOAD MENU": ["NEWS", "SEARCH", "IMAGES", "DOWNLOAD"],
         "🛠️ HEROKU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
