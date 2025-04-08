@@ -525,25 +525,25 @@ try {
                 });
 
             } catch (error) {
-                console.error(`Command error [${com}]:`, error);
-                try {
-                    await adams.sendMessage(origineMessage, {
-                        text: `🚨 Command failed: ${error.message}`,
-                        ...createContext(auteurMessage, {
-                            title: "Error",
-                            body: "Command execution failed"
-                        })
-                    }, { quoted: ms });
-                } catch (sendErr) {
-                    console.error("Error sending error message:", sendErr);
-                }
-            }
-        }
+    console.error(`Command error [${com}]:`, error);
+    try {
+        await adams.sendMessage(origineMessage, {
+            text: `🚨 Command failed: ${error.message}`,
+            ...createContext(auteurMessage, {
+                title: "Error",
+                body: "Command execution failed"
+            })
+        }, { quoted: ms });
+    } catch (sendErr) {
+        console.error("Error sending error message:", sendErr);
     }
+}
+}
+}
 });
- 
+
 //===============================================================================================================
- 
+
 // Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
@@ -551,8 +551,7 @@ adams.ev.on("connection.update", ({ connection }) => {
 
         if (conf.DP.toLowerCase() === "yes") {
             const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
-            const connectionMsg = `
-┌─❖
+            const connectionMsg = `┌─❖
 │ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐎𝐍𝐋𝐈𝐍𝐄
 └┬❖  
 ┌┤ ǫᴜᴀɴᴛᴜᴍ ᴠᴇʀsɪᴏɴ
@@ -560,17 +559,22 @@ adams.ev.on("connection.update", ({ connection }) => {
 │ ✅ Prefix: [ ${conf.PREFIX} ] 
 │ ☣️ Public_mode: *${conf.MODE}*
 └────────────┈ ⳹  
-│ *ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ*
+│ *ғᴏʀ �ᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ*
 │ https://business.bwmxmd.online
 │ App Name: ${herokuAppName}
 └───────────────┈ ⳹  
 │  ©ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
-└─────────────────┈ ⳹       
-`;
+└─────────────────┈ ⳹`;
 
             adams.sendMessage(
                 adams.user.id,
-                { text: connectionMsg },
+                {
+                    text: connectionMsg,
+                    ...createContext("BWM XMD", {
+                        title: "SYSTEM ONLINE",
+                        body: "Quantum Version Activated"
+                    })
+                },
                 {
                     disappearingMessagesInChat: true,
                     ephemeralExpiration: 600,
