@@ -552,15 +552,19 @@ adams.ev.on("connection.update", ({ connection }) => {
         if (conf.DP.toLowerCase() === "yes") {
             const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
             const connectionMsg = `
-〔  🚀 BWM XMD CONNECTED 🚀 〕
-
-├──〔 ✨ Version: 7.0.8 〕 
-├──〔 🎭 Classic and Things 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│  
-├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName}  
-╰──────────────────◆`;
+┌─❖
+│ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐎𝐍𝐋𝐈𝐍𝐄
+└┬❖  
+┌┤ ǫᴜᴀɴᴛᴜᴍ ᴠᴇʀsɪᴏɴ
+│└────────┈ ⳹  
+│ ✅ Prefix: [ ${conf.PREFIX} ] 
+│ ☣️ Mode: *${conf.MODE}*
+└────────────┈ ⳹  
+│ App Name: ${herokuAppName}
+└───────────────┈ ⳹  
+│  ©ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+└─────────────────┈ ⳹       
+`;
 
             adams.sendMessage(
                 adams.user.id,
