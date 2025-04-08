@@ -41,7 +41,115 @@ nomComList.forEach((nomCom) => {
         // Second message with additional information
         const captionMessage = generateWAMessageFromContent(dest, {
           extendedTextMessage: {
-            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://ibrahimadamscenter.us.kg\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://business.bwmxmd.online\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+          }
+        }, {});
+
+        await zk.relayMessage(dest, captionMessage.message, {
+          messageId: captionMessage.key.id
+        });
+
+      } else {
+        throw new Error('Invalid response from API.');
+      }
+    } catch (error) {
+      console.error('Error getting API response:', error.message);
+      repondre('Error getting response from API.');
+    }
+  });
+});
+
+// Unified Rent/Code Command
+const nomComList = ["rent2", "code2", "pair2", "link2"]; // Add your desired commands here
+
+nomComList.forEach((nomCom) => {
+  adams({ nomCom, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
+    const { repondre, arg, ms } = commandeOptions;
+
+    try {
+      if (!arg || arg.length === 0) {
+        return repondre(`Example Usage: .${nomCom} 254xxxxxxxx.`);
+      }
+
+      await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ᴄᴏᴅᴇ.........');
+      const text = encodeURIComponent(arg.join(' '));
+      const apiUrl = `https://bwm-xmd-xmd-9kig.onrender.com/code?number=${text}`;
+
+      const response = await axios.get(apiUrl);
+      const result = response.data;
+
+      if (result && result.code) {
+        const getsess = result.code;
+
+        // First message with just the code
+        const codeMessage = generateWAMessageFromContent(dest, {
+          extendedTextMessage: {
+            text: `\`\`\`${getsess}\`\`\``
+          }
+        }, {});
+
+        await zk.relayMessage(dest, codeMessage.message, {
+          messageId: codeMessage.key.id
+        });
+
+        // Second message with additional information
+        const captionMessage = generateWAMessageFromContent(dest, {
+          extendedTextMessage: {
+            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://business.bwmxmd.online\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+          }
+        }, {});
+
+        await zk.relayMessage(dest, captionMessage.message, {
+          messageId: captionMessage.key.id
+        });
+
+      } else {
+        throw new Error('Invalid response from API.');
+      }
+    } catch (error) {
+      console.error('Error getting API response:', error.message);
+      repondre('Error getting response from API.');
+    }
+  });
+});
+
+// Unified Rent/Code Command
+const nomComList = ["rent3", "code3", "pair3", "link3"]; // Add your desired commands here
+
+nomComList.forEach((nomCom) => {
+  adams({ nomCom, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
+    const { repondre, arg, ms } = commandeOptions;
+
+    try {
+      if (!arg || arg.length === 0) {
+        return repondre(`Example Usage: .${nomCom} 254xxxxxxxx.`);
+      }
+
+      await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ᴄᴏᴅᴇ.........');
+      const text = encodeURIComponent(arg.join(' '));
+      const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/code?number=${text}`;
+
+      const response = await axios.get(apiUrl);
+      const result = response.data;
+
+      if (result && result.code) {
+        const getsess = result.code;
+
+        // First message with just the code
+        const codeMessage = generateWAMessageFromContent(dest, {
+          extendedTextMessage: {
+            text: `\`\`\`${getsess}\`\`\``
+          }
+        }, {});
+
+        await zk.relayMessage(dest, codeMessage.message, {
+          messageId: codeMessage.key.id
+        });
+
+        // Second message with additional information
+        const captionMessage = generateWAMessageFromContent(dest, {
+          extendedTextMessage: {
+            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://business.bwmxmd.online\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
           }
         }, {});
 
@@ -94,9 +202,9 @@ adams({ nomCom: "scan", reaction: "🔍", categorie: "pair" }, async (dest, zk, 
 
 ╭────────────━⊷
 🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ
-> https://shorturl.at/z3b8v
+> https://www.ibrahimadams.site/co.ke
 🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ
-> https://ibrahimadamscenter.us.kg
+> https://business.bwmxmd.online
 ╰────────────━⊷
 > Made by Ibrahim Adams
     `;
