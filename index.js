@@ -557,9 +557,9 @@ adams.ev.on("connection.update", ({ connection }) => {
 ┌┤ ǫᴜᴀɴᴛᴜᴍ ᴠᴇʀsɪᴏɴ
 │└────────┈ ⳹  
 │ ✅ Prefix: [ ${conf.PREFIX} ] 
-│ ☣️ Public_mode: *${conf.MODE}*
+│ ☣️ Public_mode: *${md}*
 └────────────┈ ⳹  
-│ *ғᴏʀ �ᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ*
+│ *ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ*
 │ https://business.bwmxmd.online
 │ App Name: ${herokuAppName}
 └───────────────┈ ⳹  
