@@ -311,7 +311,7 @@ class ListenerManager {
                     });
                     
                     this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded listener: ${file}`);
+                   // console.log(`Loaded listener: ${file}`);
                 }
             } catch (e) {
                 console.error(`Error loading listener ${file}: ${e.message}`);
