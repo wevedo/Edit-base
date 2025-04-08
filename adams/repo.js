@@ -36,33 +36,23 @@ const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
 const axios = require("axios");
 
-const repositories = [
-  "devibrah/NORMAL-BOT",
-  "devibraah/BWM-XMD",
-];
+const repository = "ibrahimadams254/BWM-XMD-QUANTUM";
+const imageUrl = "https://files.catbox.moe/2kcb4s.jpeg";
 
 const githubRawBaseUrl =
-  "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+  "https://raw.githubusercontent.com/ibrahimadams254/BWM-XMD-QUANTUM/main/tiktokmusic";
 const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
 
 const formatNumber = (num) => num.toLocaleString();
 
-const fetchAndAggregateRepoDetails = async () => {
+const fetchRepoDetails = async () => {
   try {
-    let aggregatedForks = 0;
-    let aggregatedStars = 0;
-
-    for (const repo of repositories) {
-      const response = await axios.get(`https://api.github.com/repos/${repo}`);
-      const { stargazers_count, forks_count } = response.data;
-
-      aggregatedForks += forks_count;
-      aggregatedStars += stargazers_count;
-    }
+    const response = await axios.get(`https://api.github.com/repos/${repository}`);
+    const { stargazers_count, forks_count } = response.data;
 
     return {
-      stars: aggregatedStars * 4,
-      forks: aggregatedForks * 4,
+      stars: stargazers_count * 2,
+      forks: forks_count * 2,
     };
   } catch (error) {
     console.error("Error fetching GitHub repository details:", error);
@@ -75,7 +65,7 @@ const commands = ["git", "repo", "script", "sc"];
 commands.forEach((command) => {
   adams({ nomCom: command, categorie: "🚀 GitHub" }, async (dest, zk, commandeOptions) => {
     let { repondre } = commandeOptions;
-    const repoDetails = await fetchAndAggregateRepoDetails();
+    const repoDetails = await fetchRepoDetails();
 
     if (!repoDetails) {
       repondre("❌ Failed to fetch GitHub repository information.");
@@ -86,7 +76,7 @@ commands.forEach((command) => {
     const currentTime = moment().tz("Africa/Nairobi").format("DD/MM/YYYY HH:mm:ss");
 
     const infoMessage = `╭━===========================
-┃  📌 BWM XMD REPO INFO 📌
+┃  📌 BWM XMD QUANTUM REPO INFO 📌
 ┃ ⭐ Total Stars: ${formatNumber(stars)}
 ┃ 🍴 Total Forks: ${formatNumber(forks)}
 ┃ 👤 Owner: Sir Ibrahim Adams
@@ -110,13 +100,13 @@ commands.forEach((command) => {
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
             newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
+            newsletterName: "BWM-XMD-QUANTUM",
             serverMessageId: Math.floor(100000 + Math.random() * 900000),
           },
           externalAdReply: {
-            title: "🚀 Explore BWM-XMD Updates!",
+            title: "🚀 Explore BWM-XMD-QUANTUM Updates!",
             body: "Reply this message with 1 to get repo link.",
-            thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
+            thumbnailUrl: imageUrl,
             mediaType: 1,
             renderLargerThumbnail: true,
             showAdAttribution: true,
@@ -138,12 +128,12 @@ commands.forEach((command) => {
         ) {
           if (responseText === "1") {
             await zk.sendMessage(dest, { text: "🌍 Opening GitHub Repository..." });
-            await zk.sendMessage(dest, { text: "https://github.com/devibraah/BWM-XMD" });
+            await zk.sendMessage(dest, { text: `https://github.com/${repository}` });
           } else if (responseText === "2") {
             await zk.sendMessage(dest, { text: "📢 Opening WhatsApp Channel..." });
             await zk.sendMessage(dest, { text: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
           } else if (responseText === "3") {
-            const randomPong = Math.floor(Math.random() * 900000) + 100000; // Generates a 6-digit number
+            const randomPong = Math.floor(Math.random() * 900000) + 100000;
             await zk.sendMessage(dest, { text: `*Ping Testing...*\n\n*📡 Pong! ${randomPong} ✅*` });
           } else if (responseText === "4") {
             const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
@@ -158,13 +148,13 @@ commands.forEach((command) => {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: "120363285388090068@newsletter",
-                  newsletterName: "BWM-XMD",
+                  newsletterName: "BWM-XMD-QUANTUM",
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
                 },
                 externalAdReply: {
-                  title: "🎵 Bwm Repo Alive Audio",
+                  title: "🎵 Bwm Quantum Repo Alive Audio",
                   body: "Enjoy this random alive audio!",
-                  thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
+                  thumbnailUrl: imageUrl,
                   mediaType: 1,
                   showAdAttribution: true,
                   renderLargerThumbnail: false,
@@ -182,4 +172,3 @@ commands.forEach((command) => {
     }
   });
 });
-
