@@ -282,150 +282,150 @@ function initializeBot(bot) {
  //============================================================================//
        
                          
-// Enhanced Listener Manager Class
+
+ 
+
 class ListenerManager {
     constructor() {
         this.activeListeners = new Map();
-        this.urlListeners = new Map(); // Track listeners loaded from URLs
+        this.fetchedListeners = new Map();
     }
 
     async loadListeners(adams, store, commands) {
         const listenerDir = path.join(__dirname, 'bwmxmd');
         
-        // Clear existing listeners first
-        this.cleanupListeners();
+        // Clear existing listeners
+        this.cleanupAll();
         
-        // Load new listeners from local files
+        // Load local listeners
         const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
         
         for (const file of files) {
             try {
                 const listenerPath = path.join(listenerDir, file);
+                const listenerKey = `local_${path.basename(file, '.js')}`;
+                
+                // Clear require cache
+                delete require.cache[require.resolve(listenerPath)];
+                
                 const { setup } = require(listenerPath);
                 
                 if (typeof setup === 'function') {
-                    const cleanup = await setup(adams, { 
+                    // Create context with helper methods
+                    const context = {
+                        adams,
                         store,
                         commands,
                         logger,
-                        config: conf
-                    });
-                    
-                    this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded local listener: ${file}`);
-                }
-            } catch (e) {
-                console.error(`Error loading local listener ${file}: ${e.message}`);
-            }
-        }
-        
-        // Load listeners from URLs if configured
-        if (conf.BWM_XMD) {
-            await this.loadUrlListeners(adams, store, commands);
-        }
-    }
-
-    async loadUrlListeners(adams, store, commands) {
-        try {
-            // Fetch the main URL content
-            const response = await axios.get(conf.BWM_XMD);
-            const $ = cheerio.load(response.data);
-
-            // Find all script links (modify selector as needed)
-            const scriptElements = $('a[href$=".js"], script[src$=".js"]');
-            
-            for (const element of scriptElements) {
-                const url = $(element).attr('href') || $(element).attr('src');
-                if (!url) continue;
-                
-                try {
-                    const absoluteUrl = new URL(url, conf.BWM_XMD).href;
-                    console.log(`Loading remote listener from: ${absoluteUrl}`);
-                    
-                    const scriptResponse = await axios.get(absoluteUrl);
-                    const scriptContent = scriptResponse.data;
-                    
-                    // Create a temporary module to evaluate the script
-                    const module = { exports: {} };
-                    const require = (mod) => {
-                        if (mod === './config') return conf;
-                        if (mod === './logger') return logger;
-                        return require(mod);
+                        config: conf,
+                        fetchAndRun: (url) => this.fetchAndRunScript(url, adams, store, commands)
                     };
                     
-                    // Evaluate the script in a safe context
-                    const fn = new Function('module', 'exports', 'require', scriptContent);
-                    fn(module, module.exports, require);
-                    
-                    if (typeof module.exports.setup === 'function') {
-                        const cleanup = await module.exports.setup(adams, {
-                            store,
-                            commands,
-                            logger,
-                            config: conf
-                        });
-                        
-                        this.urlListeners.set(absoluteUrl, cleanup);
-                        console.log(`Successfully loaded remote listener from ${absoluteUrl}`);
-                    }
-                } catch (e) {
-                    console.error(`Error loading remote listener from ${url}: ${e.message}`);
+                    const cleanup = await setup.call(context, adams, context);
+                    this.activeListeners.set(listenerKey, cleanup);
+                    console.log(`✅ Loaded: ${listenerKey}`);
                 }
+            } catch (e) {
+                console.error(`❌ Error in ${file}: ${e.message}`);
             }
-        } catch (e) {
-            console.error(`Error fetching main URL content: ${e.message}`);
         }
     }
 
-    cleanupListeners() {
-        // Cleanup local listeners
-        for (const [name, cleanup] of this.activeListeners) {
-            try {
-                if (typeof cleanup === 'function') cleanup();
-            } catch (e) {
-                console.error(`Error cleaning up local listener ${name}: ${e.message}`);
+    async fetchAndRunScript(url, adams, store, commands) {
+        try {
+            if (this.fetchedListeners.has(url)) {
+                return this.fetchedListeners.get(url);
             }
+            
+            console.log('🔗 Fetching external script...');
+            const response = await axios.get(url);
+            const scriptContent = response.data;
+            
+            // Create a module-like environment
+            const module = { exports: {} };
+            const exports = module.exports;
+            
+            // Provide essential dependencies
+            const require = (mod) => {
+                if (mod === './config') return conf;
+                if (mod === './logger') return logger;
+                return require(mod);
+            };
+            
+            // Execute the script
+            const fn = new Function('module', 'exports', 'require', scriptContent);
+            fn(module, exports, require);
+            
+            if (typeof module.exports.setup === 'function') {
+                const context = {
+                    adams,
+                    store,
+                    commands,
+                    logger,
+                    config: conf
+                };
+                
+                const cleanup = await module.exports.setup.call(context, adams, context);
+                this.fetchedListeners.set(url, cleanup);
+                return cleanup;
+            }
+            
+            return null;
+        } catch (e) {
+            console.error('⚠️ Failed to run external script:', e.message);
+            return null;
         }
-        this.activeListeners.clear();
+    }
+
+    cleanupAll() {
+        // Clean local listeners
+        this.cleanupMap(this.activeListeners, 'Local listener');
         
-        // Cleanup URL listeners
-        for (const [url, cleanup] of this.urlListeners) {
+        // Clean fetched listeners
+        this.cleanupMap(this.fetchedListeners, 'Fetched listener');
+    }
+
+    cleanupMap(map, type) {
+        for (const [name, cleanup] of map) {
             try {
                 if (typeof cleanup === 'function') cleanup();
+                console.log(`♻️ Cleaned up ${type}: ${name.split('/').pop().slice(0, 15)}...`);
             } catch (e) {
-                console.error(`Error cleaning up remote listener from ${url}: ${e.message}`);
+                console.error(`⚠️ Error cleaning ${type} ${name}: ${e.message}`);
             }
         }
-        this.urlListeners.clear();
+        map.clear();
     }
 }
 
 // Initialize listener manager
 const listenerManager = new ListenerManager();
 
-// Add to connection handler
+// Connection handler
 adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
-        // Load listeners when connected
         listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('🚀Enjoy quantum speed🌎'))
-            .catch(console.error);
+            .then(() => console.log('🚀 All systems operational'))
+            .catch(e => console.error('Launch failure:', e));
     }
     
     if (connection === 'close') {
-        // Cleanup listeners on disconnect
-        listenerManager.cleanupListeners();
+        listenerManager.cleanupAll();
     }
 });
 
-// Optional: Hot reload listeners when files change
-fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-        console.log(`Reloading local listener: ${filename}`);
-        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', filename))];
-        listenerManager.loadListeners(adams, store, commandRegistry);
-    }
-});
+// Optional hot-reload for development
+if (process.env.NODE_ENV !== 'production') {
+    fs.watch(path.join(__dirname, 'bwmxmd'), (event, filename) => {
+        if (filename && filename.endsWith('.js')) {
+            console.log(`🔄 Reloading ${filename}`);
+            listenerManager.loadListeners(adams, store, commandRegistry);
+        }
+    });
+}
+
+
+ 
 
 
  
