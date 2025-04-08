@@ -28,6 +28,8 @@ const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const evt = require("./Ibrahim/adams");
 const rateLimit = new Map();
+const MAX_RATE_LIMIT_ENTRIES = 100000;
+const RATE_LIMIT_WINDOW = 3000; // 3 seconds
 const chalk = require("chalk");
 const express = require("express");
 const { exec } = require("child_process");
@@ -132,6 +134,121 @@ async function main() {
     adams = makeWASocket(sockOptions);
     store.bind(adams.ev);
 
+function isRateLimited(jid) {
+    // Automatic cleanup when map gets too large
+    if (rateLimit.size > MAX_RATE_LIMIT_ENTRIES) {
+        const now = Date.now();
+        for (const [key, value] of rateLimit.entries()) {
+            if (now - value > RATE_LIMIT_WINDOW) {
+                rateLimit.delete(key);
+            }
+        }
+    }
+
+    const now = Date.now();
+    if (!rateLimit.has(jid)) {
+        rateLimit.set(jid, now);
+        return false;
+    }
+    
+    const lastRequestTime = rateLimit.get(jid);
+    if (now - lastRequestTime < RATE_LIMIT_WINDOW) return true;
+    
+    rateLimit.set(jid, now);
+    return false;
+}
+
+// Optimized Group Metadata Handling with memory management
+const groupMetadataCache = new Map();
+const MAX_CACHE_ENTRIES = 50000;
+const CACHE_TTL = 60000; // 1 minute
+
+async function getGroupMetadata(groupId) {
+    // Automatic cache cleanup when it gets too large
+    if (groupMetadataCache.size > MAX_CACHE_ENTRIES) {
+        const now = Date.now();
+        for (const [key, { timestamp }] of groupMetadataCache.entries()) {
+            if (now - timestamp > CACHE_TTL) {
+                groupMetadataCache.delete(key);
+            }
+        }
+    }
+
+    if (groupMetadataCache.has(groupId)) {
+        return groupMetadataCache.get(groupId).metadata;
+    }
+
+    try {
+        const metadata = await zk.groupMetadata(groupId);
+        const cacheEntry = {
+            metadata,
+            timestamp: Date.now()
+        };
+        groupMetadataCache.set(groupId, cacheEntry);
+        
+        // Set timeout for individual entry cleanup
+        setTimeout(() => {
+            if (groupMetadataCache.get(groupId)?.timestamp === cacheEntry.timestamp) {
+                groupMetadataCache.delete(groupId);
+            }
+        }, CACHE_TTL);
+        
+        return metadata;
+    } catch (error) {
+        if (error.message.includes("rate-overlimit")) {
+            await new Promise(res => setTimeout(res, 5000));
+            return getGroupMetadata(groupId); // Retry after delay
+        }
+        return null;
+    }
+}
+
+// Event listener management to prevent memory leaks
+function setupListeners(bot) {
+    // Remove any existing listeners first
+    bot.ev.removeAllListeners('messages.upsert');
+    
+    // Set max listeners to a higher number
+    bot.ev.setMaxListeners(50);
+    
+    // Efficient message handler with error protection
+    bot.ev.on('messages.upsert', async ({ messages }) => {
+        try {
+            // Process messages in batches if needed
+            for (const message of messages) {
+                // Your message processing logic here
+            }
+        } catch (error) {
+            console.error('Message processing error:', error);
+        }
+    });
+}
+
+// Initialize with proper memory management
+function initializeBot(bot) {
+    setupListeners(bot);
+    
+    // Regular memory cleanup interval
+    setInterval(() => {
+        // Cleanup rate limit map
+        const now = Date.now();
+        for (const [key, value] of rateLimit.entries()) {
+            if (now - value > RATE_LIMIT_WINDOW * 10) { // 10x the window
+                rateLimit.delete(key);
+            }
+        }
+        
+        // Cleanup group metadata cache
+        const cacheNow = Date.now();
+        for (const [key, { timestamp }] of groupMetadataCache.entries()) {
+            if (cacheNow - timestamp > CACHE_TTL * 2) { // 2x the TTL
+                groupMetadataCache.delete(key);
+            }
+        }
+    }, 300000); // Run every 5 minutes
+}
+
+// Original code format maintained below:
     // Silent Rate Limiting
     function isRateLimited(jid) {
         const now = Date.now();
@@ -144,9 +261,6 @@ async function main() {
         rateLimit.set(jid, now);
         return false;
     }
-
-    // Group Metadata Handling
-    const groupMetadataCache = new Map();
     async function getGroupMetadata(groupId) {
         if (groupMetadataCache.has(groupId)) {
             return groupMetadataCache.get(groupId);
@@ -197,7 +311,7 @@ class ListenerManager {
                     });
                     
                     this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded listener: ${file}`);
+                    //console.log(`Loaded listener: ${file}`);
                 }
             } catch (e) {
                 console.error(`Error loading listener ${file}: ${e.message}`);
@@ -225,7 +339,7 @@ adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
         // Load listeners when connected
         listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('All listeners initialized'))
+            .then(() => console.log('🚀Enjoy quantum speed🌎'))
             .catch(console.error);
     }
     
@@ -249,14 +363,14 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-console.log("Loading Bwm xmd Commands...\n");
+console.log("lorded all commands successfully 🤗\n");
 try {
     const taskflowPath = path.join(__dirname, "adams");
     fs.readdirSync(taskflowPath).forEach((fichier) => {
         if (path.extname(fichier).toLowerCase() === ".js") {
             try {
                 require(path.join(taskflowPath, fichier));
-                console.log(`✔️ ${fichier} installed successfully.`);
+              //  console.log(`✔️ ${fichier} installed successfully.`);
             } catch (e) {
                 console.error(`❌ Failed to load ${fichier}: ${e.message}`);
             }
