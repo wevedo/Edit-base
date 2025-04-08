@@ -281,54 +281,40 @@ function initializeBot(bot) {
 
  //============================================================================//
                              
-class PresenceManager {
+// Listener Manager Class
+class ListenerManager {
     constructor() {
         this.activeListeners = new Map();
     }
 
-    async loadPresenceSystem(adams, store, commands) {
-        // Clear existing presence listeners
+    async loadListeners(adams, store, commands) {
+        const listenerDir = path.join(__dirname, 'bwmxmd');
+        
+        // Clear existing listeners first
         this.cleanupListeners();
         
-        try {
-            // 1. Fetch the main configuration URL
-            const response = await axios.get(adams.BWM_XMD);
-            const $ = cheerio.load(response.data);
-
-            // 2. Find the presence script URL
-            const presenceLink = $('a:contains("Presence")').attr('href');
-            if (!presenceLink) throw new Error('Presence link not found');
-
-            // 3. Fetch the presence script
-            const scriptResponse = await axios.get(presenceLink);
-            const presenceScript = scriptResponse.data;
-
-            // 4. Convert the script to a module
-            const module = { exports: {} };
-            const require = (mod) => {
-                if (mod === './config') return adams;
-                if (mod === './logger') return logger;
-                return require(mod);
-            };
-            
-            // 5. Execute the presence script
-            const fn = new Function('module', 'exports', 'require', presenceScript);
-            fn(module, module.exports, require);
-
-            // 6. Setup the presence system if available
-            if (typeof module.exports.setup === 'function') {
-                const cleanup = await module.exports.setup(adams, {
-                    store,
-                    commands,
-                    logger,
-                    config: adams
-                });
+        // Load new listeners
+        const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
+        
+        for (const file of files) {
+            try {
+                const listenerPath = path.join(listenerDir, file);
+                const { setup } = require(listenerPath);
                 
-                this.activeListeners.set('presence', cleanup);
-                console.log('🌠 Quantum Presence System Activated');
+                if (typeof setup === 'function') {
+                    const cleanup = await setup(adams, { 
+                        store,
+                        commands,
+                        logger,
+                        config: conf
+                    });
+                    
+                    this.activeListeners.set(file, cleanup);
+                    console.log(`Loaded listener: ${file}`);
+                }
+            } catch (e) {
+                console.error(`Error loading listener ${file}: ${e.message}`);
             }
-        } catch (e) {
-            console.error('⚠️ Presence system error:', e.message);
         }
     }
 
@@ -336,28 +322,38 @@ class PresenceManager {
         for (const [name, cleanup] of this.activeListeners) {
             try {
                 if (typeof cleanup === 'function') cleanup();
-                console.log(`♻️ Cleaned up ${name} listener`);
             } catch (e) {
-                console.error(`⚠️ Error cleaning ${name}:`, e.message);
+                console.error(`Error cleaning up listener ${name}: ${e.message}`);
             }
         }
         this.activeListeners.clear();
     }
 }
 
-// Initialize the presence manager
-const presenceManager = new PresenceManager();
+// Initialize listener manager
+const listenerManager = new ListenerManager();
 
-// Connection handler
+// Add to connection handler
 adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
-        presenceManager.loadPresenceSystem(adams, store, commandRegistry)
-            .then(() => console.log('🚀 BWM-XMD Quantum Presence Ready'))
-            .catch(e => console.error('Launch failed:', e.message));
+        // Load listeners when connected
+        listenerManager.loadListeners(adams, store, commandRegistry)
+            .then(() => console.log('All listeners initialized'))
+            .catch(console.error);
     }
     
     if (connection === 'close') {
-        presenceManager.cleanupListeners();
+        // Cleanup listeners on disconnect
+        listenerManager.cleanupListeners();
+    }
+});
+
+// Optional: Hot reload listeners when files change
+fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
+    if (eventType === 'change' && filename.endsWith('.js')) {
+        console.log(`Reloading listener: ${filename}`);
+        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', filename))];
+        listenerManager.loadListeners(adams, store, commandRegistry);
     }
 });
 
