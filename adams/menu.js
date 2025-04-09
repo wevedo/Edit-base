@@ -110,7 +110,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 │🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${contactName}
 │📅 ᴅᴀᴛᴇ: ${date}
 │⏰ ᴛɪᴍᴇ: ${time}
-│👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}        
+│👥 ʙᴡᴍ ᴜsᴇʀs: ${totalUsers}        
 └────────────────┈⳹ 
 
 > ©Ibrahim Adams
