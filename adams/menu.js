@@ -3,6 +3,7 @@ const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
+const PREFIX = s.PREFIX;
 const readMore = String.fromCharCode(8206).repeat(4000); 
 
 // GitHub raw audio links
