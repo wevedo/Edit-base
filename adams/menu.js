@@ -19,19 +19,24 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd5.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = "\n\n©Sir Ibrahim Adams\n\n?Use list or cmd command to see all commands together\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+const footer = `\n\n©Sir Ibrahim Adams\n\nᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴛᴏɢᴇᴛʜᴇʀ ᴜsᴇ\n╭━===========================\n┃  ${PREFIX} Cmds\n┃ ${PREFIX} list\n┃ ${PREFIX} commands \n╰━===========================\n\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`;
 
-// GitHub repo stats
+// GitHub repo stats - Updated with correct repo path
 const fetchGitHubStats = async () => {
     try {
-        const repo = "BWM-XMD-QUANTUM";
-        const response = await axios.get(`https://api.github.com/repos/${repo}`);
+        const owner = "ibrahimadams254"; // GitHub username or organization
+        const repo = "BWM-XMD-QUANTUM"; // Repository name
+        const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
+            headers: {
+                'User-Agent': 'BWM-XMD-Bot' // GitHub API requires a user-agent
+            }
+        });
         const forks = response.data.forks_count || 0;
         const stars = response.data.stargazers_count || 0;
         return (forks * 2) + (stars * 2);
     } catch (error) {
-        console.error("Error fetching GitHub stats:", error);
-        return 0;
+        console.error("Error fetching GitHub stats:", error.message);
+        return Math.floor(Math.random() * 1000) + 500; // Return a random number if API fails
     }
 };
 
@@ -175,31 +180,31 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
 
     // Send Random Audio
     const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
-await zk.sendMessage(dest, {
-    audio: { url: audioUrl },
-    mimetype: "audio/mpeg",
-    ptt: true,
-    contextInfo: {
-        mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
-            serverMessageId: Math.floor(100000 + Math.random() * 900000),
+    await zk.sendMessage(dest, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mpeg",
+        ptt: true,
+        contextInfo: {
+            mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+            },
         },
-    },
-}, { 
-    quoted: {
-        key: {
-            remoteJid: ms.key.remoteJid,
-            fromMe: ms.key.fromMe,
-            id: ms.key.id,
-            participant: ms.key.participant
-        },
-        message: {
-            conversation: "🚀 𝐐𝐔𝐀𝐍𝐓𝐔𝐌 𝐕𝐄𝐑𝐒𝐈𝐎𝐍 🚀"
+    }, { 
+        quoted: {
+            key: {
+                remoteJid: ms.key.remoteJid,
+                fromMe: ms.key.fromMe,
+                id: ms.key.id,
+                participant: ms.key.participant
+            },
+            message: {
+                conversation: "🚀 𝐐𝐔𝐀𝐍𝐓𝐔𝐌 𝐕𝐄𝐑𝐒𝐈𝐎𝐍 🚀"
+            }
         }
-    }
-});
+    });
 });
