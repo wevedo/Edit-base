@@ -3,8 +3,8 @@ const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
-const PREFIX = s.PREFIX;
 const readMore = String.fromCharCode(8206).repeat(4000); 
+const PREFIX = s.PREFIX; // Get prefix from config
 
 // GitHub raw audio links
 const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
@@ -20,12 +20,12 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd5.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = `\n\n©Sir Ibrahim Adams\n\nᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴛᴏɢᴇᴛʜᴇʀ ᴜsᴇ\n╭━===========================\n┃  ${PREFIX} Cmds\n┃ ${PREFIX} list\n┃ ${PREFIX} commands \n╰━===========================\n\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`;
+const footer = `\n\n©Sir Ibrahim Adams\n\nᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴛᴏɢᴇᴛʜᴇʀ ᴜsᴇ\n╭━===========================\n┃  ${PREFIX}Cmds\n┃ ${PREFIX}list\n┃ ${PREFIX}commands \n╰━===========================\n\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`;
 
 // GitHub repo stats - Updated with correct repo path
 const fetchGitHubStats = async () => {
     try {
-        const owner = "ibrahimadams254"; // GitHub username or organization
+        const owner = "ibrahimadams254"; // Updated GitHub username
         const repo = "BWM-XMD-QUANTUM"; // Repository name
         const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
             headers: {
