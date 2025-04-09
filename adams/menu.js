@@ -1,4 +1,3 @@
-
 const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
