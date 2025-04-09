@@ -20,7 +20,7 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd5.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = `\n\n©Sir Ibrahim Adams\n\nᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴛᴏɢᴇᴛʜᴇʀ ᴜsᴇ\n╭━===========================\n┃  ${PREFIX}Cmds\n┃ ${PREFIX}list\n┃ ${PREFIX}commands \n╰━===========================\n\nFor business use this : https://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`;
+const footer = `\n\n©Sir Ibrahim Adams\n\n╭━===========================\n┃  ᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴛᴏɢᴇᴛʜᴇʀ ᴜsᴇ\n┃  *${PREFIX} Cmds*\n┃ *${PREFIX} list*\n┃ *${PREFIX} commands* \n╰━===========================\n\n*For business use this*\nhttps://business.bwmxmd.online\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`;
 
 // GitHub repo stats - Updated with correct repo path
 const fetchGitHubStats = async () => {
