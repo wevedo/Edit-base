@@ -285,7 +285,7 @@ function initializeBot(bot) {
  //============================================================================//
  let ibraah = { chats: {} };
 const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
-const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+const botOwnerJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
 
 // Improved media processing function with better error handling
 const processMediaMessage = async (deletedMessage) => {
