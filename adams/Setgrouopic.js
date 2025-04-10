@@ -176,7 +176,7 @@ adams({
 
 // Command to show online status
 adams({
-    nomCom: "online",
+    nomCom: "onlineupdate",
     categorie: "Personal",
     reaction: "🟢",
     nomFichier: __filename
