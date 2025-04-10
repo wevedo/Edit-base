@@ -102,7 +102,7 @@ adams(
   }
 );
 
-console.log("WhatsApp bot is ready!");
+//console.log("WhatsApp bot is ready!");
 
 adams(
   { nomCom: "test", reaction: "🪄", nomFichier: __filename },
@@ -185,7 +185,7 @@ adams(
   }
 );
 
-console.log("WhatsApp bot is ready!");
+//console.log("WhatsApp bot is ready!");
 
 
 
