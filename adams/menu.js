@@ -87,14 +87,15 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     // Custom Categories with Emojis
     const categoryGroups = {
         "🤖 AI MENU": ["AI", "TTS", "NEWS"],
-        "⚽ SPORTS": ["FOOTBALL", "GAMES"],
+        "⚽ SPORTS MENU": ["FOOTBALL", "GAMES"],
         "📥 DOWNLOAD MENU": ["NEWS", "SEARCH", "IMAGES", "DOWNLOAD"],
-        "🛠️ HEROKU": ["CONTROL", "STICKCMD", "TOOLS"],
+        "🛠️ HEROKU MENU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
         "🌍 GENERAL MENU": ["GENERAL", "MODS"],
         "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
         "💻 BOT_INFO MENU": ["GITHUB", "USER", "PAIR"],
+        "🔞 ADULT MENU": ["XVIDEO"],
     };
 
     // Send Main Menu as Quote Reply with Random Image
