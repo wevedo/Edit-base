@@ -1064,6 +1064,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
             ? evt.cm.find((c) => 
                 c?.nomCom === com || 
                 (Array.isArray(c?.aliases) && c.aliases.includes(com))
+              )
             : null;
 
         if (cmd) {
