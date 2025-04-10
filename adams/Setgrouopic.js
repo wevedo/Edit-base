@@ -46,407 +46,193 @@ adams({
     }
 });
 
+// ========== PROFILE PICTURE COMMANDS ========== //
+const profilePicCommands = ["setpp", "setprofilepic", "updatephoto", "changepic"];
+profilePicCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "🖼️",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { ms, repondre, auteurMsg } = commandeOptions;
 
-// [Previous commands: setgrouppic, setprofilepic, profile, mystatus, block, unblock]
-
-// Post text status
-adams({
-    nomCom: ["poststatus", "statuspost"],
-    categorie: "Personal",
-    reaction: "📢",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, arg, auteurMsg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const statusText = arg.join(' ');
-    if (!statusText) {
-        return repondre("ℹ️ Please provide status text. Example: !poststatus Hello world!");
-    }
-
-    try {
-        await zk.updateStatus(statusText);
-        await repondre("✅ Status posted successfully!");
-    } catch (err) {
-        console.error("Error posting status:", err);
-        await repondre(`❌ Failed to post status: ${err.message}`);
-    }
-});
-
-// Post image status (with optional caption)
-adams({
-    nomCom: ["postimgstatus", "statusimg"],
-    categorie: "Personal",
-    reaction: "🖼️",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, ms, arg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    if (!quotedMsg?.imageMessage) {
-        return repondre("ℹ️ Please reply to an image message to post as status.");
-    }
-
-    const caption = arg.join(' ') || "";
-
-    try {
-        const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
-        const buffer = await streamToBuffer(stream);
-        
-        await zk.sendMessage(auteurMsg, {
-            image: buffer,
-            caption: caption,
-            viewOnce: true
-        }, {
-            ephemeralExpiration: 86400, // 24 hours
-            statusJidList: [auteurMsg] // Post as status
-        });
-
-        await repondre("✅ Image status posted successfully!");
-    } catch (err) {
-        console.error("Error posting image status:", err);
-        await repondre(`❌ Failed to post image status: ${err.message}`);
-    }
-});
-
-// Post video status (with optional caption)
-adams({
-    nomCom: ["postvidstatus", "statusvid"],
-    categorie: "Personal",
-    reaction: "🎥",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, ms, arg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    if (!quotedMsg?.videoMessage) {
-        return repondre("ℹ️ Please reply to a video message to post as status.");
-    }
-
-    const caption = arg.join(' ') || "";
-
-    try {
-        const stream = await downloadContentFromMessage(quotedMsg.videoMessage, 'video');
-        const buffer = await streamToBuffer(stream);
-        
-        await zk.sendMessage(auteurMsg, {
-            video: buffer,
-            caption: caption,
-            viewOnce: true
-        }, {
-            ephemeralExpiration: 86400, // 24 hours
-            statusJidList: [auteurMsg] // Post as status
-        });
-
-        await repondre("✅ Video status posted successfully!");
-    } catch (err) {
-        console.error("Error posting video status:", err);
-        await repondre(`❌ Failed to post video status: ${err.message}`);
-    }
-});
-
-// Post audio status
-adams({
-    nomCom: ["postaudiostatus", "statusaudio"],
-    categorie: "Personal",
-    reaction: "🎵",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, ms } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    if (!quotedMsg?.audioMessage) {
-        return repondre("ℹ️ Please reply to an audio message to post as status.");
-    }
-
-    try {
-        const stream = await downloadContentFromMessage(quotedMsg.audioMessage, 'audio');
-        const buffer = await streamToBuffer(stream);
-        
-        await zk.sendMessage(auteurMsg, {
-            audio: buffer,
-            ptt: false,
-            viewOnce: true
-        }, {
-            ephemeralExpiration: 86400, // 24 hours
-            statusJidList: [auteurMsg] // Post as status
-        });
-
-        await repondre("✅ Audio status posted successfully!");
-    } catch (err) {
-        console.error("Error posting audio status:", err);
-        await repondre(`❌ Failed to post audio status: ${err.message}`);
-    }
-});
-
-// View someone's status
-adams({
-    nomCom: ["viewstatus", "checkstatus"],
-    categorie: "Personal",
-    reaction: "👀",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, arg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const userId = arg[0] || dest;
-    if (!userId.includes('@')) {
-        return repondre("ℹ️ Please specify a valid user ID (e.g., 1234567890@s.whatsapp.net)");
-    }
-
-    try {
-        const status = await zk.fetchStatus(userId);
-        if (!status || !status.status) {
-            return repondre("ℹ️ This user has no status set.");
+        // Only allow in private chat
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chat.");
         }
 
-        let statusInfo = `👤 *Status Information*\n\n`;
-        statusInfo += `🆔 *User:* ${userId}\n`;
-        statusInfo += `📝 *Status:* ${status.status}\n`;
-        statusInfo += `📅 *Last Updated:* ${status.setAt ? new Date(status.setAt).toLocaleString() : 'Unknown'}\n`;
-
-        await repondre(statusInfo);
-    } catch (err) {
-        console.error("Error viewing status:", err);
-        await repondre(`❌ Error: ${err.message}`);
-    }
-});
-
-// Delete your current status
-adams({
-    nomCom: ["deletestatus", "removestatus"],
-    categorie: "Personal",
-    reaction: "🗑️",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, auteurMsg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    try {
-        await zk.updateStatus("");
-        await repondre("✅ Your status has been cleared!");
-    } catch (err) {
-        console.error("Error deleting status:", err);
-        await repondre(`❌ Failed to delete status: ${err.message}`);
-    }
-});
-
-// Set profile name
-adams({
-    nomCom: ["setname", "updateprofile"],
-    categorie: "Personal",
-    reaction: "📛",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, arg, auteurMsg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const newName = arg.join(' ');
-    if (!newName) {
-        return repondre("ℹ️ Please provide a new name. Example: !setname John Doe");
-    }
-
-    try {
-        await zk.updateProfileName(newName);
-        await repondre(`✅ Your profile name has been updated to: ${newName}`);
-    } catch (err) {
-        console.error("Error updating profile name:", err);
-        await repondre(`❌ Failed to update profile name: ${err.message}`);
-    }
-});
-
-// Set about info (bio)
-adams({
-    nomCom: ["setbio", "about"],
-    categorie: "Personal",
-    reaction: "ℹ️",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, arg, auteurMsg } = commandeOptions;
-
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    const bioText = arg.join(' ');
-    if (!bioText) {
-        return repondre("ℹ️ Please provide bio text. Example: !setbio Software Developer");
-    }
-
-    try {
-        await zk.updateProfileStatus(bioText);
-        await repondre(`✅ Your bio has been updated to: ${bioText}`);
-    } catch (err) {
-        console.error("Error updating bio:", err);
-        await repondre(`❌ Failed to update bio: ${err.message}`);
-    }
-});
-
-
-// Personal profile picture changer
-adams({
-    nomCom: "setprofilepic",
-    categorie: "Personal",
-    reaction: "🖼️",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { ms, repondre, auteurMsg } = commandeOptions;
-
-    // Only allow changing your own profile in private chat
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chat to change your personal profile picture.");
-    }
-
-    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    if (!quotedMsg?.imageMessage) {
-        return repondre("ℹ️ Please reply to an image message to set as your profile picture.");
-    }
-
-    let pp = null;
-    try {
-        // Download and save image
-        const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
-        const buffer = await streamToBuffer(stream);
-        pp = path.join(__dirname, `profileimg_${Date.now()}.jpg`);
-        await fs.writeFile(pp, buffer);
-
-        // Update profile picture
-        await zk.updateProfilePicture(auteurMsg, { url: pp });
-        await repondre("✅ Your profile picture has been updated successfully!");
-        fs.unlinkSync(pp);
-    } catch (err) {
-        console.error("Error setting profile picture:", err);
-        if (pp && fs.existsSync(pp)) fs.unlinkSync(pp);
-        await repondre(`❌ Failed to update profile picture: ${err.message}`);
-    }
-});
-
-// Display user profile info in private chat
-adams({
-    nomCom: "profile",
-    categorie: "Personal",
-    reaction: "👤",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, auteurMsg, arg, ms } = commandeOptions;
-
-    // Only works in private chat
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    try {
-        // Get the user ID - either the person you're chatting with or yourself
-        const userId = arg[0] && arg[0].includes('@') ? arg[0] : auteurMsg;
-        
-        // Fetch user's profile picture and info
-        const [profilePicture, status, userInfo] = await Promise.all([
-            zk.profilePictureUrl(userId, 'image').catch(() => null),
-            zk.fetchStatus(userId).catch(() => ({ status: "No status" })),
-            zk.userMetadata(userId).catch(() => ({ name: "Unknown" }))
-        ]);
-
-        // Construct profile message
-        let profileMessage = `👤 *Profile Information*\n\n`;
-        profileMessage += `📛 *Name:* ${userInfo?.name || 'Unknown'}\n`;
-        profileMessage += `🆔 *User ID:* ${userId}\n`;
-        profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
-        profileMessage += `📅 *Last Seen:* ${status?.lastSeen ? new Date(status.lastSeen).toLocaleString() : 'Unknown'}\n`;
-
-        // Send profile text
-        await repondre(profileMessage);
-
-        // Send profile picture if available
-        if (profilePicture) {
-            await zk.sendMessage(dest, { 
-                image: { url: profilePicture },
-                caption: "🖼️ Profile Picture"
-            });
-        } else {
-            await repondre("ℹ️ No profile picture available.");
+        const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg?.imageMessage) {
+            return repondre("ℹ️ Please reply to an image message to set as profile picture.");
         }
-    } catch (err) {
-        console.error("Error fetching profile:", err);
-        await repondre(`❌ Error fetching profile information: ${err.message}`);
-    }
-});
 
-// Additional personal chat commands
-adams({
-    nomCom: ["mystatus", "status"],
-    categorie: "Personal",
-    reaction: "📝",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, auteurMsg, arg } = commandeOptions;
+        let tempPath = null;
+        try {
+            // Download image
+            const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
+            const buffer = await streamToBuffer(stream);
+            tempPath = path.join(__dirname, `temp_profile_${Date.now()}.jpg`);
+            await fs.writeFile(tempPath, buffer);
 
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    try {
-        if (arg.join(' ')) {
-            // Set new status
-            await zk.updateStatus(arg.join(' '));
-            return repondre("✅ Your status has been updated!");
-        } else {
-            // Get current status
-            const status = await zk.fetchStatus(auteurMsg);
-            return repondre(`📝 Your current status: ${status?.status || "You don't have a status set."}`);
+            // Update profile picture
+            await zk.updateProfilePicture(auteurMsg, { url: tempPath });
+            await repondre("✅ Profile picture updated successfully!");
+        } catch (err) {
+            console.error("Profile picture error:", err);
+            await repondre(`❌ Failed to update profile picture: ${err.message}`);
+        } finally {
+            if (tempPath && fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
         }
-    } catch (err) {
-        console.error("Error with status command:", err);
-        await repondre(`❌ Error: ${err.message}`);
-    }
+    });
 });
 
-adams({
-    nomCom: "unblock",
-    categorie: "Personal",
-    reaction: "✅",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, arg } = commandeOptions;
+// ========== VIEW PROFILE COMMANDS ========== //
+const viewProfileCommands = ["profile", "info", "userinfo", "whois"];
+viewProfileCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "👤",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { repondre, auteurMsg, ms } = commandeOptions;
 
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
+        // Only works in private chat
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chats.");
+        }
 
-    if (!arg[0]) {
-        return repondre("ℹ️ Please specify a user ID to unblock (e.g., 1234567890@s.whatsapp.net)");
-    }
+        try {
+            // Get the user ID (the person you're chatting with)
+            const userId = dest;
 
-    try {
-        await zk.updateBlockStatus(arg[0], "unblock");
-        await repondre(`✅ Successfully unblocked ${arg[0]}`);
-    } catch (err) {
-        console.error("Error unblocking user:", err);
-        await repondre(`❌ Failed to unblock user: ${err.message}`);
-    }
+            // Fetch profile information
+            const [profilePicture, status] = await Promise.all([
+                zk.profilePictureUrl(userId, 'image').catch(() => null),
+                zk.fetchStatus(userId).catch(() => ({ status: "No status" }))
+            ]);
+
+            // Get user name from message metadata
+            const pushName = ms.pushName || "Unknown";
+
+            // Construct profile message
+            let profileMessage = `👤 *Profile Information*\n\n`;
+            profileMessage += `📛 *Name:* ${pushName}\n`;
+            profileMessage += `🆔 *User ID:* ${userId}\n`;
+            profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
+
+            // Send profile text
+            await repondre(profileMessage);
+
+            // Send profile picture if available
+            if (profilePicture) {
+                await zk.sendMessage(dest, { 
+                    image: { url: profilePicture },
+                    caption: "🖼️ Profile Picture"
+                });
+            } else {
+                await repondre("ℹ️ No profile picture available.");
+            }
+        } catch (err) {
+            console.error("Profile error:", err);
+            await repondre(`❌ Error fetching profile: ${err.message}`);
+        }
+    });
+});
+
+// ========== STATUS COMMANDS ========== //
+const statusCommands = ["mystatus", "status", "about"];
+statusCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "📝",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { repondre, auteurMsg, arg } = commandeOptions;
+
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chats.");
+        }
+
+        try {
+            if (arg.length > 0) {
+                // Set new status
+                await zk.updateProfileStatus(arg.join(' '));
+                return repondre("✅ Your status has been updated!");
+            } else {
+                // Get current status
+                const status = await zk.fetchStatus(auteurMsg);
+                return repondre(`📝 Your current status: ${status?.status || "No status set"}`);
+            }
+        } catch (err) {
+            console.error("Status error:", err);
+            await repondre(`❌ Error: ${err.message}`);
+        }
+    });
+});
+
+// ========== POST STATUS COMMANDS ========== //
+const postStatusCommands = ["poststatus", "statuspost", "setstatus"];
+postStatusCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "📢",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { repondre, arg, auteurMsg } = commandeOptions;
+
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chats.");
+        }
+
+        const statusText = arg.join(' ');
+        if (!statusText) {
+            return repondre("ℹ️ Please provide status text. Example: !poststatus Hello world!");
+        }
+
+        try {
+            await zk.updateProfileStatus(statusText);
+            await repondre("✅ Status posted successfully!");
+        } catch (err) {
+            console.error("Status post error:", err);
+            await repondre(`❌ Failed to post status: ${err.message}`);
+        }
+    });
+});
+
+// ========== PROFILE NAME COMMANDS ========== //
+const nameCommands = ["setname", "updatename", "myname"];
+nameCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "📛",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { repondre, arg, auteurMsg } = commandeOptions;
+
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chats.");
+        }
+
+        const newName = arg.join(' ');
+        if (!newName) {
+            return repondre("ℹ️ Please provide a new name. Example: !setname John Doe");
+        }
+
+        try {
+            await zk.updateProfileName(newName);
+            await repondre(`✅ Your profile name has been updated to: ${newName}`);
+        } catch (err) {
+            console.error("Name update error:", err);
+            await repondre(`❌ Failed to update name: ${err.message}`);
+        }
+    });
 });
 
 
