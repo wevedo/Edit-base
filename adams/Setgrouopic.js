@@ -84,7 +84,6 @@ adams({
     }
 });
 
-Display user profile info in private chat
 adams({
     nomCom: "profile",
     categorie: "Personal",
