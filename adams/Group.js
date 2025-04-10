@@ -1,6 +1,70 @@
 const { adams } = require("../Ibrahim/adams");
 
 
+
+adams({ nomCom: "join", categorie: "Mods" }, async (dest, zk, commandeOptions) => {
+
+  const { arg, ms, repondre, verifGroupe, msgRepondu, verifAdmin, superUser, auteurMessage } = commandeOptions;
+
+  if (!superUser) {
+    repondre("command reserved for the bot owner");
+    return;
+  }
+  let result = arg[0].split('https://chat.whatsapp.com/')[1] ;
+ await zk.groupAcceptInvite(result) ;
+  
+      repondre(`Succes`).catch((e)=>{
+  repondre('Unknown error')
+})
+
+})
+
+
+adams({ nomCom: "jid", categorie: "Mods" }, async (dest, zk, commandeOptions) => {
+
+  const { arg, ms, repondre, verifGroupe, msgRepondu, verifAdmin, superUser, auteurMessage,auteurMsgRepondu } = commandeOptions;
+
+         if (!superUser) {
+    repondre("command reserved for the bot owner");
+    return;
+  }
+              if(!msgRepondu) {
+                jid = dest
+              } else {
+                jid = auteurMsgRepondu
+              } ;
+   zk.sendMessage(dest,{text : jid },{quoted:ms});
+
+        }) ;
+
+  
+
+adams({ nomCom: "block", categorie: "Mods" }, async (dest, zk, commandeOptions) => {
+
+  const { arg, ms, repondre, verifGroupe, msgRepondu, verifAdmin, superUser, auteurMessage,auteurMsgRepondu } = commandeOptions;
+
+         if (!superUser) {
+    repondre("command reserved for the bot owner");
+    return;
+  }
+             
+              if(!msgRepondu) { 
+                if(verifGroupe) {
+                  repondre('Be sure to mention the person to block'); return
+                } ;
+                jid = dest
+
+                 await zk.updateBlockStatus(jid, "block")
+    .then( repondre('succes')) 
+              } else {
+                jid = auteurMsgRepondu
+             await zk.updateBlockStatus(jid, "block")
+    .then( repondre('succes'))   } ;
+
+  });
+
+
+
 adams({ nomCom: "link", categorie: 'Group', reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
