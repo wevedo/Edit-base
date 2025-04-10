@@ -65,6 +65,7 @@ adams({ nomCom: "block", categorie: "Mods" }, async (dest, zk, commandeOptions) 
 
 
 
+
 adams({ nomCom: "link", categorie: 'Group', reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
