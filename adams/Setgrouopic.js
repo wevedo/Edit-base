@@ -84,49 +84,58 @@ adams({
     }
 });
 
-adams({
-    nomCom: "profile",
-    categorie: "Personal",
-    reaction: "👤",
-    nomFichier: __filename
-}, async (dest, zk, commandeOptions) => {
-    const { repondre, auteurMsg, arg, ms } = commandeOptions;
+// ========== VIEW PROFILE COMMANDS ========== //
+const viewProfileCommands = ["profile", "info", "userinfo", "whois"];
+viewProfileCommands.forEach((nomCom) => {
+    adams({
+        nomCom,
+        categorie: "Personal",
+        reaction: "👤",
+        nomFichier: __filename
+    }, async (dest, zk, commandeOptions) => {
+        const { repondre, auteurMsg, ms } = commandeOptions;
 
-    // Only works in private chat
-    if (dest.includes('@g.us')) {
-        return repondre("ℹ️ This command only works in private chats.");
-    }
-
-    try {
-        // Get the user ID - either the person you're chatting with or yourself
-        const userId = arg[0] && arg[0].includes('@') ? arg[0] : auteurMsg;
-        
-        // Fetch user's profile picture and info
-        const [profilePicture, status, userInfo] = await Promise.all([
-            zk.profilePictureUrl(userId, 'image').catch(() => null),
-            zk.fetchStatus(userId).catch(() => ({ status: "No status" })),
-            zk.userMetadata(userId).catch(() => ({ name: "Unknown" }))
-        ]);
-
-        // Construct profile message
-        let profileMessage = `👤 *Profile Information*\n\n`;
-        profileMessage += `📛 *Name:* ${userInfo?.name || 'Unknown'}\n`;
-        profileMessage += `🆔 *User ID:* ${userId}\n`;
-        profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
-        profileMessage += `📅 *Last Seen:* ${status?.lastSeen ? new Date(status.lastSeen).toLocaleString() : 'Unknown'}\n`;
-        // Send profile picture if available
-        if (profilePicture) {
-            await zk.sendMessage(dest, { 
-                image: { url: profilePicture },
-                caption: profileMessage
-            });
-        } else {
-            await repondre(profileMessage);
+        // Only works in private chat
+        if (dest.includes('@g.us')) {
+            return repondre("ℹ️ This command only works in private chats.");
         }
-    } catch (err) {
-        console.error("Error fetching profile:", err);
-        await repondre(`❌ Error fetching profile information: ${err.message}`);
-    }
+
+        try {
+            // Get the user ID (the person you're chatting with)
+            const userId = dest;
+
+            // Fetch profile information
+            const [profilePicture, status] = await Promise.all([
+                zk.profilePictureUrl(userId, 'image').catch(() => null),
+                zk.fetchStatus(userId).catch(() => ({ status: "No status" }))
+            ]);
+
+            // Get user name from message metadata
+            const pushName = ms.pushName || "Unknown";
+
+            // Construct profile message
+            let profileMessage = `👤 *Profile Information*\n\n`;
+            profileMessage += `📛 *Name:* ${pushName}\n`;
+            profileMessage += `🆔 *User ID:* ${userId}\n`;
+            profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
+
+            // Send profile text
+            
+            // Send profile picture if available
+            if (profilePicture) {
+                await zk.sendMessage(dest, { 
+                    image: { url: profilePicture },
+                    caption: profileMessage
+                });
+            } else {
+                await repondre(profileMessage);
+
+            }
+        } catch (err) {
+            console.error("Profile error:", err);
+            await repondre(`❌ Error fetching profile: ${err.message}`);
+        }
+    });
 });
 
 
