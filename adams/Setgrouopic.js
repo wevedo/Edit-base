@@ -240,8 +240,6 @@ adams({
         await repondre(`❌ Failed to fetch last seen time: ${err.message}`);
     }
 });
-});
-
 
 // Convert stream to buffer
 async function streamToBuffer(stream) {
