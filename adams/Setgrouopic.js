@@ -29,7 +29,7 @@ adams({
     const metadata = await zk.groupMetadata(dest);
     const isAdmin = metadata.participants.find(p => p.id === auteurMessage)?.admin === 'admin';
     
-    if (!isAdmin) {
+    if (!superUser) {
         return repondre("❌ You must be a group admin to use this command.");
     }
 
