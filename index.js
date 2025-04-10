@@ -1007,8 +1007,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     // Check if sender is superUser
     const isSuperUser = superUser.includes(auteurMessage);
 
-    let verifAdmin = false;
-    let botIsAdmin = false;
+    let verifAdmin = true;
+    let botIsAdmin = true;
     if (verifGroupe && infosGroupe) {
         const admins = infosGroupe.participants.filter(p => p.admin).map(p => standardizeJid(p.id));
         verifAdmin = admins.includes(auteurMessage);
