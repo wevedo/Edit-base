@@ -15,7 +15,7 @@ async function streamToBuffer(stream) {
 
 // Command to set group picture
 adams({
-    nomCom: "setgp",
+    nomCom: "setgpp",
     categorie: "Group",
     reaction: "🖼️",
     nomFichier: __filename
@@ -84,57 +84,162 @@ adams({
     }
 });
 
-// Command to get user profile info
+// Improved Profile Command
 adams({
     nomCom: "profile",
-    categorie: "Utility",
+    categorie: "Personal",
     reaction: "👤",
     nomFichier: __filename
 }, async (dest, zk, commandeOptions) => {
-    const { repondre, auteurMessage, arg, ms } = commandeOptions;
+    const { repondre, auteurMsg, arg, ms } = commandeOptions;
+
+    // Only works in private chat
+    if (dest.includes('@g.us')) {
+        return repondre("ℹ️ This command only works in private chats.");
+    }
 
     try {
-        // Get the user ID - either the person you're chatting with or the person you mentioned
-        let userId = auteurMessage;
-        if (ms.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-            userId = ms.message.extendedTextMessage.contextInfo.mentionedJid[0];
+        // Get the user ID - either the person you're chatting with or yourself
+        const userId = arg[0] && arg[0].includes('@') ? arg[0] : auteurMsg;
+        
+        // Fetch user's profile picture and info
+        const [profilePicture, status, userInfo] = await Promise.all([
+            zk.profilePictureUrl(userId, 'image').catch(() => null),
+            zk.fetchStatus(userId).catch(() => ({ status: "No status" })),
+            zk.getContact(userId).catch(() => ({ notify: "Unknown" }))
+        ]);
+
+        // Construct profile message
+        let profileMessage = `👤 *Profile Information*\n\n`;
+        profileMessage += `📛 *Name:* ${userInfo?.notify || userInfo?.vname || userInfo?.name || 'Unknown'}\n`;
+        profileMessage += `🆔 *User ID:* ${userId}\n`;
+        profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
+        
+        if (status?.lastSeen) {
+            const lastSeenDate = new Date(status.lastSeen);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - lastSeenDate) / (1000 * 60));
+            
+            if (diffMinutes < 1) {
+                profileMessage += `🟢 *Status:* Online now\n`;
+            } else if (diffMinutes < 5) {
+                profileMessage += `🟡 *Status:* Online ${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago\n`;
+            } else {
+                profileMessage += `🔴 *Status:* Last seen ${lastSeenDate.toLocaleString()}\n`;
+            }
+        } else {
+            profileMessage += `🔵 *Status:* Unknown\n`;
         }
 
-        // Get profile picture URL
-        const pfpUrl = await zk.profilePictureUrl(userId, 'image');
-        
-        // Get user's status
-        const status = await zk.fetchStatus(userId).catch(() => ({ status: "No status" }));
-        
-        // Get user's name
-        const contact = await zk.getContact(userId);
-        const username = contact.notify || contact.vname || contact.name || "Unknown";
-
-        // Prepare caption
-        const caption = `👤 *User Profile*\n\n` +
-                       `• *Name:* ${username}\n` +
-                       `• *Status:* ${status.status || "No status"}\n` +
-                       `• *JID:* ${userId}`;
-
-        if (pfpUrl) {
-            // Download profile picture
-            const response = await fetch(pfpUrl);
-            const buffer = await response.buffer();
-            
-            // Send with image
+        // Send profile picture if available
+        if (profilePicture) {
             await zk.sendMessage(dest, { 
-                image: buffer,
-                caption: caption,
-                mentions: [userId]
+                image: { url: profilePicture },
+                caption: profileMessage
             }, { quoted: ms });
         } else {
-            // Send without image if no profile picture
-            await repondre(caption);
+            await repondre(profileMessage);
         }
     } catch (err) {
         console.error("Error fetching profile:", err);
-        await repondre(`❌ Failed to fetch profile: ${err.message}`);
+        await repondre(`❌ Error fetching profile information: ${err.message}`);
     }
+});
+
+// Command to set your status
+adams({
+    nomCom: "setstatus",
+    categorie: "Personal",
+    reaction: "📝",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { repondre, arg, ms } = commandeOptions;
+
+    // Only works in private chat
+    if (dest.includes('@g.us')) {
+        return repondre("ℹ️ This command only works in private chats.");
+    }
+
+    const statusText = arg.join(' ');
+    if (!statusText) {
+        return repondre("ℹ️ Please provide a status text. Example: /setstatus Working on my bot");
+    }
+
+    try {
+        await zk.updateStatus(statusText);
+        await repondre(`✅ Status updated to: "${statusText}"`);
+    } catch (err) {
+        console.error("Error setting status:", err);
+        await repondre(`❌ Failed to update status: ${err.message}`);
+    }
+});
+
+// Command to show online status
+adams({
+    nomCom: "online",
+    categorie: "Personal",
+    reaction: "🟢",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { repondre, auteurMsg } = commandeOptions;
+
+    // Only works in private chat
+    if (dest.includes('@g.us')) {
+        return repondre("ℹ️ This command only works in private chats.");
+    }
+
+    try {
+        // This simulates being online by updating last seen to now
+        await zk.updateLastSeen(new Date());
+        await repondre("🟢 You now appear online");
+    } catch (err) {
+        console.error("Error updating online status:", err);
+        await repondre(`❌ Failed to update online status: ${err.message}`);
+    }
+});
+
+// Command to show last seen time
+adams({
+    nomCom: "lastseen",
+    categorie: "Personal",
+    reaction: "🕒",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { repondre, auteurMsg, arg } = commandeOptions;
+
+    // Only works in private chat
+    if (dest.includes('@g.us')) {
+        return repondre("ℹ️ This command only works in private chats.");
+    }
+
+    try {
+        const userId = arg[0] && arg[0].includes('@') ? arg[0] : auteurMsg;
+        const status = await zk.fetchStatus(userId).catch(() => ({}));
+        
+        if (status?.lastSeen) {
+            const lastSeenDate = new Date(status.lastSeen);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - lastSeenDate) / (1000 * 60));
+            
+            let message;
+            if (diffMinutes < 1) {
+                message = `🟢 ${userId === auteurMsg ? 'You are' : 'User is'} currently online`;
+            } else if (diffMinutes < 60) {
+                message = `🟡 ${userId === auteurMsg ? 'You were' : 'User was'} online ${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+            } else {
+                const diffHours = Math.floor(diffMinutes / 60);
+                message = `🔴 ${userId === auteurMsg ? 'You were' : 'User was'} last seen ${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+            }
+            
+            await repondre(message);
+        } else {
+            await repondre(`🔵 Last seen time is not available for this user`);
+        }
+    } catch (err) {
+        console.error("Error fetching last seen:", err);
+        await repondre(`❌ Failed to fetch last seen time: ${err.message}`);
+    }
+});
 });
 
 
