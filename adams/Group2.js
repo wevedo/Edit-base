@@ -1,4 +1,5 @@
 const { adams } = require("../Ibrahim/adams");
+const conf = require(__dirname + "/../config");
 const BOT_NAME = "BWM_XMD";
 const BOT_TAGLINE = "Next-Gen WhatsApp Automation";
 const EMOJI_THEME = {
