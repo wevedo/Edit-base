@@ -115,18 +115,14 @@ adams({
         profileMessage += `🆔 *User ID:* ${userId}\n`;
         profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
         profileMessage += `📅 *Last Seen:* ${status?.lastSeen ? new Date(status.lastSeen).toLocaleString() : 'Unknown'}\n`;
-
-        // Send profile text
-        await repondre(profileMessage);
-
         // Send profile picture if available
         if (profilePicture) {
             await zk.sendMessage(dest, { 
                 image: { url: profilePicture },
-                caption: `${profileMessage}`
+                caption: profileMessage
             });
         } else {
-            await repondre("ℹ️ No profile picture available.");
+            await repondre(profileMessage);
         }
     } catch (err) {
         console.error("Error fetching profile:", err);
