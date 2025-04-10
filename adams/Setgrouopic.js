@@ -15,7 +15,7 @@ async function streamToBuffer(stream) {
 
 // 1. Group Set Picture Command
 adams({
-    nomCom: "setgrouppic",
+    nomCom: "setgpp",
     categorie: "Group",
     reaction: "🖼️",
     nomFichier: __filename
