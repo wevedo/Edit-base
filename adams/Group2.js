@@ -163,7 +163,7 @@ adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) 
   const { ms, repondre, verifGroupe } = commandeOptions;
   if (!superUser) { repondre("order reserved for the group only"); return };
 
- try { ppgroup = await zk.profilePictureUrl(dest ,'image') ; } catch { ppgroup = conf.IMAGE_MENU}
+ try { ppgroup = await zk.profilePictureUrl(dest ,'image') ; } catch { ppgroup = conf.BOT_MENU_LINKS}
 
     const info = await zk.groupMetadata(dest)
 
