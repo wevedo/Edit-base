@@ -142,71 +142,75 @@ adams(
 );
 
 
-adams({
-  nomCom: ["xvideo", "sex", "pono", "pornhub", "porn", "xnxx"],
-  aliases: ["xvideos", "xvideos", "xvideos"],
-  categorie: "Search",
-  reaction: "🔞"
-}, async (dest, zk, commandOptions) => {
-  const { arg, ms, repondre } = commandOptions;
+// Multiple command aliases for adult content search
+const adultComList = ["porn", "pono", "xnxx", "xvideos", "pornhub", "xxx", "xvideo"];
 
-  if (!arg[0]) {
-    return repondre("Please provide a search term.");
-  }
+adultComList.forEach((nomCom) => {
+  adams({ 
+    nomCom, 
+    aliases: adultComList.filter(c => c !== nomCom), // All other commands as aliases
+    categorie: "xvideo", 
+    reaction: "🔞" 
+  }, async (dest, zk, commandOptions) => {
+    const { arg, ms, repondre } = commandOptions;
 
-  const query = arg.join(" ");
-
-  try {
-    // Search for videos
-    const searchResponse = await axios.get(`https://apis-keith.vercel.app/search/searchxvideos?q=${encodeURIComponent(query)}`);
-    const searchData = searchResponse.data;
-
-    if (!searchData.status || !searchData.result || searchData.result.length === 0) {
-      return repondre('No videos found for the specified query.');
+    if (!arg[0]) {
+      return repondre("Please provide a search term.");
     }
 
-    const firstVideo = searchData.result[0];
-    const videoUrl = firstVideo.url;
+    const query = arg.join(" ");
 
-    // Get download URL
-    const downloadResponse = await axios.get(`https://apis-keith.vercel.app/download/porn?url=${encodeURIComponent(videoUrl)}`);
-    const downloadData = downloadResponse.data;
+    try {
+      // Search for videos
+      const searchResponse = await axios.get(`https://apis-keith.vercel.app/search/searchxvideos?q=${encodeURIComponent(query)}`);
+      const searchData = searchResponse.data;
 
-    if (!downloadData.status || !downloadData.result) {
-      return repondre('Failed to retrieve download URL. Please try again later.');
+      if (!searchData.status || !searchData.result || searchData.result.length === 0) {
+        return repondre('No videos found for the specified query.');
+      }
+
+      const firstVideo = searchData.result[0];
+      const videoUrl = firstVideo.url;
+
+      // Get download link
+      const downloadResponse = await axios.get(`https://apis-keith.vercel.app/download/porn?url=${encodeURIComponent(videoUrl)}`);
+      const downloadData = downloadResponse.data;
+
+      if (!downloadData.status || !downloadData.result) {
+        return repondre('Failed to retrieve download URL. Please try again later.');
+      }
+
+      const downloadUrl = downloadData.result.downloads.highQuality || downloadData.result.downloads.lowQuality;
+      const videoInfo = downloadData.result.videoInfo;
+
+      // Send as newsletter-style video message
+      await zk.sendMessage(dest, {
+        video: { url: downloadUrl },
+        mimetype: 'video/mp4',
+        caption: `*${videoInfo.title}*\n\nDuration: ${videoInfo.duration} seconds`,
+        contextInfo: {
+          mentionedJid: [dest.sender || ""],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: Math.floor(Math.random() * 1000),
+          },
+          externalAdReply: {
+            title: videoInfo.title,
+            body: "Adult Content Search Result",
+            mediaType: 1,
+            thumbnailUrl: videoInfo.thumbnail,
+            renderLargerThumbnail: false,
+            showAdAttribution: true,
+          },
+        },
+      }, { quoted: ms });
+
+    } catch (error) {
+      console.error('Error during download process:', error);
+      return repondre(`Download failed due to an error: ${error.message || error}`);
     }
-
-    const downloadUrl = downloadData.result.downloads.highQuality || downloadData.result.downloads.lowQuality;
-    const videoInfo = downloadData.result.videoInfo;
-
-    // Send video in newsletter format
-    await zk.sendMessage(dest, {
-      video: { url: downloadUrl },
-      mimetype: 'video/mp4',
-      caption: `*${videoInfo.title}*\n\nDuration: ${videoInfo.duration} seconds`,
-      contextInfo: {
-        mentionedJid: [dest.sender || ""],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363285388090068@newsletter",
-          newsletterName: "BWM-XMD",
-          serverMessageId: 143,
-        },
-        externalAdReply: {
-          title: videoInfo.title,
-          body: "XVIDEOS Search Result",
-          mediaType: 1,
-          sourceUrl: conf.GURL,
-          thumbnailUrl: videoInfo.thumbnail,
-          renderLargerThumbnail: false,
-          showAdAttribution: true,
-        },
-      },
-    });
-
-  } catch (error) {
-    console.error('Error during download process:', error);
-    return repondre(`Download failed due to an error: ${error.message || error}`);
-  }
+  });
 });
