@@ -13,14 +13,25 @@ async function streamToBuffer(stream) {
     });
 }
 
-// Command to set group picture
+// 1. Group Set Picture Command
 adams({
-    nomCom: "setgpp",
+    nomCom: "setgrouppic",
     categorie: "Group",
     reaction: "🖼️",
     nomFichier: __filename
 }, async (dest, zk, commandeOptions) => {
-    const { ms, repondre } = commandeOptions;
+    const { ms, repondre, auteurMessage } = commandeOptions;
+
+    if (!dest.includes('@g.us')) {
+        return repondre("❌ This command can only be used in groups.");
+    }
+
+    const metadata = await zk.groupMetadata(dest);
+    const isAdmin = metadata.participants.find(p => p.id === auteurMessage)?.admin === 'admin';
+    
+    if (!isAdmin) {
+        return repondre("❌ You must be a group admin to use this command.");
+    }
 
     const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     if (!quotedMsg?.imageMessage) {
@@ -29,15 +40,13 @@ adams({
 
     let pp = null;
     try {
-        // Download and save image
         const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
         const buffer = await streamToBuffer(stream);
         pp = path.join(__dirname, `groupimg_${Date.now()}.jpg`);
         await fs.writeFile(pp, buffer);
 
-        // Update profile picture
         await zk.updateProfilePicture(dest, { url: pp });
-        await repondre("✅ Group picture updated successfully.");
+        await repondre("✅ Group picture updated successfully!");
         fs.unlinkSync(pp);
     } catch (err) {
         console.error("Error setting group picture:", err);
@@ -46,7 +55,46 @@ adams({
     }
 });
 
-// Command to update your own profile picture
+// 2. Profile Command
+adams({
+    nomCom: "profile",
+    categorie: "Utility",
+    reaction: "👤",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { repondre, ms, auteurMessage } = commandeOptions;
+
+    if (dest.includes('@g.us')) {
+        return repondre("❌ This command can only be used in private chats.");
+    }
+
+    try {
+        const userId = dest;
+        const [profilePicture, status] = await Promise.all([
+            zk.profilePictureUrl(userId, 'image').catch(() => null),
+            zk.fetchStatus(userId).catch(() => ({ status: "No status" }))
+        ]);
+
+        const profileMessage = `👤 *Profile Information*\n\n` +
+                              `📛 *Name:* ${ms.pushName || "Unknown"}\n` +
+                              `🆔 *User ID:* ${userId}\n` +
+                              `📝 *Status:* ${status?.status || 'No status'}`;
+
+        if (profilePicture) {
+            await zk.sendMessage(dest, { 
+                image: { url: profilePicture },
+                caption: profileMessage
+            });
+        } else {
+            await repondre(profileMessage);
+        }
+    } catch (err) {
+        console.error("Error fetching profile:", err);
+        await repondre(`❌ Error fetching profile information: ${err.message}`);
+    }
+});
+
+// 3. Set Profile Picture Command
 adams({
     nomCom: "setpp",
     categorie: "Utility",
@@ -55,7 +103,6 @@ adams({
 }, async (dest, zk, commandeOptions) => {
     const { ms, repondre, auteurMessage } = commandeOptions;
 
-    // Only allow in private chats
     if (dest.includes('@g.us')) {
         return repondre("❌ This command can only be used in private chats.");
     }
@@ -67,75 +114,19 @@ adams({
 
     let pp = null;
     try {
-        // Download and save image
         const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
         const buffer = await streamToBuffer(stream);
         pp = path.join(__dirname, `profileimg_${Date.now()}.jpg`);
         await fs.writeFile(pp, buffer);
 
-        // Update profile picture
         await zk.updateProfilePicture(auteurMessage, { url: pp });
-        await repondre("✅ Your profile picture updated successfully.");
+        await repondre("✅ Your profile picture updated successfully!");
         fs.unlinkSync(pp);
     } catch (err) {
         console.error("Error setting profile picture:", err);
         if (pp && fs.existsSync(pp)) fs.unlinkSync(pp);
         await repondre(`❌ Failed to update profile picture: ${err.message}`);
     }
-});
-
-// ========== VIEW PROFILE COMMANDS ========== //
-const viewProfileCommands = ["profile", "info", "userinfo", "whois"];
-viewProfileCommands.forEach((nomCom) => {
-    adams({
-        nomCom,
-        categorie: "Personal",
-        reaction: "👤",
-        nomFichier: __filename
-    }, async (dest, zk, commandeOptions) => {
-        const { repondre, auteurMsg, ms } = commandeOptions;
-
-        // Only works in private chat
-        if (dest.includes('@g.us')) {
-            return repondre("ℹ️ This command only works in private chats.");
-        }
-
-        try {
-            // Get the user ID (the person you're chatting with)
-            const userId = dest;
-
-            // Fetch profile information
-            const [profilePicture, status] = await Promise.all([
-                zk.profilePictureUrl(userId, 'image').catch(() => null),
-                zk.fetchStatus(userId).catch(() => ({ status: "No status" }))
-            ]);
-
-            // Get user name from message metadata
-            const pushName = ms.pushName || "Unknown";
-
-            // Construct profile message
-            let profileMessage = `👤 *Profile Information*\n\n`;
-            profileMessage += `📛 *Name:* ${pushName}\n`;
-            profileMessage += `🆔 *User ID:* ${userId}\n`;
-            profileMessage += `📝 *Status:* ${status?.status || 'No status'}\n`;
-
-            // Send profile text
-            
-            // Send profile picture if available
-            if (profilePicture) {
-                await zk.sendMessage(dest, { 
-                    image: { url: profilePicture },
-                    caption: profileMessage
-                });
-            } else {
-                await repondre(profileMessage);
-
-            }
-        } catch (err) {
-            console.error("Profile error:", err);
-            await repondre(`❌ Error fetching profile: ${err.message}`);
-        }
-    });
 });
 
 
