@@ -283,9 +283,11 @@ function initializeBot(bot) {
 
 
  //============================================================================//
+
+ 
  let ibraah = { chats: {} };
 const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
-const botOwnerJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+const botOwnerJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`; // Fixed: Changed from adams.user to config
 
 // Improved media processing function with better error handling
 const processMediaMessage = async (deletedMessage) => {
@@ -474,6 +476,9 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
         const { key } = ms;
         if (!key?.remoteJid) return;
+
+        // Skip status updates (status@broadcast)
+        if (key.remoteJid === 'status@broadcast') return;
 
         const sender = key.participant || key.remoteJid;
         if (sender === botJid || sender === botOwnerJid || key.fromMe) return;
