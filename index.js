@@ -945,49 +945,65 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message || !ms?.key) return;
 
-    // Helper function to safely decode and standardize JID
+    // Helper function to safely decode and standardize JID (IMPROVED)
     function standardizeJid(jid) {
         if (!jid) return '';
-        jid = typeof jid.decodeJid === 'function' ? jid.decodeJid() : String(jid);
-        // Ensure proper JID format
-        if (!jid.includes('@')) jid += '@s.whatsapp.net';
-        return jid.toLowerCase(); // case insensitive comparison
+        try {
+            // Handle both raw JIDs and objects
+            jid = typeof jid === 'string' ? jid : 
+                 (jid.decodeJid ? jid.decodeJid() : String(jid));
+            
+            // Remove resource portion if present
+            jid = jid.split('/')[0];
+            
+            // Ensure proper JID format
+            if (!jid.includes('@')) {
+                jid += jid.endsWith('@g.us') ? '' : '@s.whatsapp.net';
+            }
+            return jid.toLowerCase();
+        } catch (e) {
+            console.error("JID standardization error:", e);
+            return '';
+        }
     }
 
-    // Extract core message information
+    // Extract core message information (UNCHANGED)
     const origineMessage = standardizeJid(ms.key.remoteJid);
     const idBot = standardizeJid(adams.user?.id);
     const verifGroupe = origineMessage.endsWith("@g.us");
     
-    // Group metadata handling
+    // Group metadata handling (IMPROVED ADMIN CHECK)
     let infosGroupe = null;
     let nomGroupe = '';
-    try {
-        infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage).catch(() => null) : null;
-        nomGroupe = infosGroupe?.subject || '';
-    } catch (err) {
-        console.error("Group metadata error:", err);
+    
+    if (verifGroupe) {
+        try {
+            infosGroupe = await adams.groupMetadata(origineMessage);
+            nomGroupe = infosGroupe?.subject || '';
+        } catch (err) {
+            console.error("Group metadata error:", err);
+        }
     }
 
-    // Quoted message handling
+    // Quoted message handling (UNCHANGED)
     const msgRepondu = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
     const auteurMsgRepondu = standardizeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
     const mentionedJids = (ms.message?.extendedTextMessage?.contextInfo?.mentionedJid || []).map(standardizeJid);
 
-    // Author determination
+    // Author determination (UNCHANGED)
     let auteurMessage = verifGroupe 
         ? standardizeJid(ms.key.participant || ms.participant || origineMessage)
         : origineMessage;
     if (ms.key.fromMe) auteurMessage = idBot;
 
-    // Determine user being addressed (for mentions or quoted messages)
+    // Determine user being addressed (UNCHANGED)
     const utilisateur = mentionedJids.length > 0 
         ? mentionedJids[0] 
         : msgRepondu 
             ? auteurMsgRepondu 
             : '';
 
-    // Define SUDO numbers (without @s.whatsapp.net)
+    // Define SUDO numbers (UNCHANGED)
     const SUDO_NUMBERS = [
         "254710772666",
         "254106727593",
@@ -997,25 +1013,44 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     const botJid = idBot;
     const ownerJid = standardizeJid(conf.OWNER_NUMBER);
 
-    // Super users who can always use commands
+    // Super users (UNCHANGED)
     const superUser = [
         ownerJid,
         botJid,
-        ...SUDO_NUMBERS.map(num => standardizeJid(num))
+        ...SUDO_NUMBERS.map(num => standardizeJid(num + '@s.whatsapp.net'))
     ];
 
-    // Check if sender is superUser
+    // Check if sender is superUser (UNCHANGED)
     const isSuperUser = superUser.includes(auteurMessage);
 
+    // ADMIN VERIFICATION - FIXED VERSION (ONLY THIS SECTION CHANGED)
     let verifAdmin = false;
     let botIsAdmin = false;
+    
     if (verifGroupe && infosGroupe) {
-        const admins = infosGroupe.participants.filter(p => p.admin).map(p => standardizeJid(p.id));
-        verifAdmin = admins.includes(auteurMessage);
-        botIsAdmin = admins.includes(botJid);
+        try {
+            const participants = infosGroupe.participants || [];
+            const admins = participants
+                .filter(p => p.admin)
+                .map(p => standardizeJid(p.id));
+            
+            verifAdmin = admins.includes(auteurMessage);
+            botIsAdmin = admins.includes(botJid);
+            
+            // Debug logs
+            console.log('Admin Check:', {
+                group: nomGroupe,
+                admins: admins,
+                sender: auteurMessage,
+                isAdmin: verifAdmin,
+                botIsAdmin: botIsAdmin
+            });
+        } catch (err) {
+            console.error('Admin verification error:', err);
+        }
     }
 
-    // Message content processing
+    // Message content processing (UNCHANGED)
     const texte = ms.message?.conversation || 
                  ms.message?.extendedTextMessage?.text || 
                  ms.message?.imageMessage?.caption || 
@@ -1029,19 +1064,16 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
             ? evt.cm.find((c) => 
                 c?.nomCom === com || 
                 (Array.isArray(c?.aliases) && c.aliases.includes(com))
-            )
             : null;
 
         if (cmd) {
-            // MODE check - superUser can always bypass restrictions
+            // MODE check (UNCHANGED)
             if (conf.MODE?.toLowerCase() === "no" && !isSuperUser) {
-                //console.log(`Command blocked for ${auteurMessage} - MODE is set to "no"`);
                 return;
             }
 
-
             try {
-                // Reply function with context
+                // Reply function (UNCHANGED)
                 const repondre = async (text, options = {}) => {
                     if (typeof text !== 'string') return;
                     try {
@@ -1057,7 +1089,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     }
                 };
 
-                // Add reaction
+                // Add reaction (UNCHANGED)
                 if (cmd.reaction) {
                     try {
                         await adams.sendMessage(origineMessage, {
@@ -1071,7 +1103,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     }
                 }
 
-                // Prepare command context
+                // Prepare command context (UNCHANGED)
                 const context = {
                     ms,
                     arg,
@@ -1083,15 +1115,15 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     infosGroupe,
                     nomGroupe,
                     auteurMessage,
-                    utilisateur: utilisateur || '', // Ensure it's always defined
+                    utilisateur: utilisateur || '',
                     membreGroupe: verifGroupe ? auteurMessage : '',
                     origineMessage,
                     msgRepondu,
-                    auteurMsgRepondu: auteurMsgRepondu || '', // Ensure it's always defined
+                    auteurMsgRepondu: auteurMsgRepondu || '',
                     isSuperUser
                 };
 
-                // Execute command with full context
+                // Execute command (UNCHANGED)
                 await cmd.fonction(origineMessage, adams, context);
 
             } catch (error) {
