@@ -1,6 +1,7 @@
 const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
 const ytSearch = require("yt-search");
+const cheerio = require("cheerio"); // For HTML parsing
 
 adams({
   'nomCom': "movie",
@@ -15,9 +16,10 @@ adams({
 
   const query = arg.join(" ");
   let movieData = null;
-  let trailerData = null;
+  let trailerUrl = null;
+  let trailerSource = "Not found";
 
-  // Step 1: Try to get movie info from OMDB API
+  // Step 1: Get movie info from OMDB
   try {
     const omdbResponse = await axios.get(`http://www.omdbapi.com/?apikey=742b2d09&t=${encodeURIComponent(query)}&plot=full`);
     if (omdbResponse.data.Response === "True") {
@@ -27,101 +29,79 @@ adams({
     console.error("OMDB API error:", error);
   }
 
-  // Step 2: Try to find trailer on YouTube
-  try {
-    const searchResults = await ytSearch(`${query} official trailer`);
-    if (searchResults.videos.length > 0) {
-      trailerData = searchResults.videos[0];
+  // Step 2: Try to find IMDb trailer first
+  if (movieData?.imdbID) {
+    try {
+      const imdbPage = await axios.get(`https://www.imdb.com/title/${movieData.imdbID}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
       
-      // Get download link from your API
-      const apiResponse = await axios.get(
-        `https://api.bwmxmd.online/api/download/ytmp4?apikey=ibraah-tech&url=${encodeURIComponent(trailerData.url)}`
-      );
-      
-      if (apiResponse.data?.success) {
-        trailerData.downloadUrl = apiResponse.data.result.download_url;
+      const $ = cheerio.load(imdbPage.data);
+      const trailerElement = $("a[data-testid='videos-slate-overlay-1']");
+      if (trailerElement.length) {
+        trailerUrl = `https://www.imdb.com${trailerElement.attr('href')}`;
+        trailerSource = "IMDb";
       }
+    } catch (error) {
+      console.error("IMDb page scraping error:", error);
     }
-  } catch (error) {
-    console.error("YouTube search error:", error);
   }
 
-  // Step 3: Send the best available response
-  if (trailerData?.downloadUrl && movieData) {
-    // Case 1: Both trailer and movie info available
-    const movieInfo = `
+  // Step 3: Fallback to YouTube if no IMDb trailer
+  if (!trailerUrl) {
+    try {
+      const searchResults = await ytSearch(`${query} official trailer`);
+      if (searchResults.videos.length > 0) {
+        trailerUrl = searchResults.videos[0].url;
+        trailerSource = "YouTube";
+      }
+    } catch (error) {
+      console.error("YouTube search error:", error);
+    }
+  }
+
+  // Step 4: Prepare and send response
+  if (movieData) {
+    let caption = `
 🎬 *${movieData.Title}* (${movieData.Year})
-⭐ Rating: ${movieData.imdbRating || 'N/A'} • ${movieData.Rated || 'N/A'}
+⭐ Rating: ${movieData.imdbRating || 'N/A'} 
 ⏳ Runtime: ${movieData.Runtime || 'N/A'}
 🎭 Genre: ${movieData.Genre || 'N/A'}
 📅 Released: ${movieData.Released || 'N/A'}
-🎥 Director: ${movieData.Director || 'N/A'}
-👨‍👩‍👧‍👦 Actors: ${movieData.Actors || 'N/A'}
 📜 Plot: ${movieData.Plot || 'N/A'}
 
-🔗 IMDB: ${movieData.imdbID ? `https://www.imdb.com/title/${movieData.imdbID}/` : 'N/A'}
+${trailerUrl ? `🎥 Trailer: ${trailerUrl} (Source: ${trailerSource})` : '⚠️ No trailer found'}
     `.trim();
 
-    await zk.sendMessage(dest, {
-      video: { url: trailerData.downloadUrl },
-      mimetype: "video/mp4",
-      caption: movieInfo,
-      contextInfo: {
-        externalAdReply: {
-          title: movieData.Title,
-          body: `🎬 ${movieData.Year} • ${movieData.Runtime || ''}`,
-          mediaType: 2,
-          thumbnailUrl: movieData.Poster || trailerData.thumbnail,
-          sourceUrl: trailerData.url,
-          renderLargerThumbnail: true,
-          showAdAttribution: true
+    if (trailerUrl && trailerSource === "YouTube") {
+      // For YouTube trailers, we can download and send as video
+      try {
+        const apiResponse = await axios.get(
+          `https://api.bwmxmd.online/api/download/ytmp4?apikey=ibraah-tech&url=${encodeURIComponent(trailerUrl)}`
+        );
+        
+        if (apiResponse.data?.success) {
+          await zk.sendMessage(dest, {
+            video: { url: apiResponse.data.result.download_url },
+            mimetype: "video/mp4",
+            caption: caption
+          }, { quoted: ms });
+          return;
         }
+      } catch (error) {
+        console.error("Trailer download error:", error);
       }
-    }, { quoted: ms });
+    }
 
-  } else if (trailerData?.downloadUrl) {
-    // Case 2: Only trailer available
-    await zk.sendMessage(dest, {
-      video: { url: trailerData.downloadUrl },
-      mimetype: "video/mp4",
-      caption: `🎥 *${trailerData.title}*\n⏳ Duration: ${trailerData.timestamp}\n\nCouldn't find detailed info for "${query}"`,
-      contextInfo: {
-        externalAdReply: {
-          title: trailerData.title,
-          body: `🎥 ${query} Trailer`,
-          mediaType: 2,
-          thumbnailUrl: trailerData.thumbnail,
-          sourceUrl: trailerData.url,
-          renderLargerThumbnail: true,
-          showAdAttribution: true
-        }
-      }
-    }, { quoted: ms });
-
-  } else if (movieData) {
-    // Case 3: Only movie info available
-    const movieInfo = `
-🎬 *${movieData.Title}* (${movieData.Year})
-⭐ Rating: ${movieData.imdbRating || 'N/A'} • ${movieData.Rated || 'N/A'}
-⏳ Runtime: ${movieData.Runtime || 'N/A'}
-🎭 Genre: ${movieData.Genre || 'N/A'}
-📅 Released: ${movieData.Released || 'N/A'}
-🎥 Director: ${movieData.Director || 'N/A'}
-👨‍👩‍👧‍👦 Actors: ${movieData.Actors || 'N/A'}
-📜 Plot: ${movieData.Plot || 'N/A'}
-
-🔗 IMDB: ${movieData.imdbID ? `https://www.imdb.com/title/${movieData.imdbID}/` : 'N/A'}
-
-⚠️ Couldn't find a trailer for this movie
-    `.trim();
-
+    // Fallback to sending poster + info
     await zk.sendMessage(dest, {
       image: { url: movieData.Poster || 'https://via.placeholder.com/500x750?text=No+Poster+Available' },
-      caption: movieInfo
+      caption: caption
     }, { quoted: ms });
 
   } else {
-    // Case 4: Nothing found
-    repondre(`❌ Couldn't find any information or trailer for "${query}"`);
+    repondre(`❌ Couldn't find any information for "${query}"`);
   }
 });
