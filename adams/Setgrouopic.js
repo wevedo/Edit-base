@@ -20,7 +20,7 @@ adams({
     reaction: "🖼️",
     nomFichier: __filename
 }, async (dest, zk, commandeOptions) => {
-    const { ms, repondre, superUser, auteurMessage } = commandeOptions;
+    const { ms, repondre, superUser, verifAdmin, auteurMessage } = commandeOptions;
 
     if (!dest.includes('@g.us')) {
         return repondre("❌ This command can only be used in groups.");
@@ -29,7 +29,7 @@ adams({
     const metadata = await zk.groupMetadata(dest);
     const isAdmin = metadata.participants.find(p => p.id === auteurMessage)?.admin === 'admin';
     
-    if (!superUser) {
+   if (!verifAdmin && !superUser) {
         return repondre("❌ You must be a group admin to use this command.");
     }
 
