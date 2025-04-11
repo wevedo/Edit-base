@@ -109,7 +109,7 @@ adams({
 📅 Released: ${movieData.Released || 'N/A'}
 📜 Plot: ${movieData.Plot || 'N/A'}
 
-${trailerUrl ? `🎥 Trailer Source: ${trailerSource}` : '⚠️ No trailer found'}
+${trailerUrl ? `🎥 Trailer Source: ${trailerSource}` : '⚠️ No video trailer found'}
     `.trim();
 
     if (videoDownloadUrl) {
