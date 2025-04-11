@@ -92,7 +92,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🛠️ HEROKU MENU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
-        "🌍 GENERAL MENU": ["GENERAL", "MODS"],
+        "🌍 GENERAL MENU": ["GENERAL", "MODS", "UTILITY", "MEDIA", "TRADE"],
         "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
         "💻 BOT_INFO MENU": ["GITHUB", "USER", "PAIR"],
         "🔞 ADULT MENU": ["XVIDEO"],
