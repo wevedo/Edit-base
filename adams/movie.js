@@ -13,7 +13,7 @@ const randomImages = [
 adams({
   'nomCom': "movie",
   'categorie': 'Search',
-  'reaction': '🎬'
+  'reaction': '🌎'
 }, async (dest, zk, commandOptions) => {
   const { arg, repondre, ms } = commandOptions;
   
