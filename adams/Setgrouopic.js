@@ -20,7 +20,7 @@ adams({
     reaction: "🖼️",
     nomFichier: __filename
 }, async (dest, zk, commandeOptions) => {
-    const { ms, repondre, auteurMessage } = commandeOptions;
+    const { ms, repondre, superUser, auteurMessage } = commandeOptions;
 
     if (!dest.includes('@g.us')) {
         return repondre("❌ This command can only be used in groups.");
