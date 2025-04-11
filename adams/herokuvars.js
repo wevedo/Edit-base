@@ -129,13 +129,19 @@ adams(
         }* Previous Page`;
 
         const sentMessage = await zk.sendMessage(chatId, {
-          image: { url: randomImage },
-          caption: message,
-          contextInfo: {
-            forwardingScore: 999,
-            isForwarded: true,
-          },
-        });
+  image: { url: randomImage },
+  caption: message,
+  contextInfo: {
+    mentionedJid: [],
+    forwardingScore: 999,
+    isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: "120363285388090068@newsletter",
+      newsletterName: "BWM-XMD",
+      serverMessageId: Math.floor(100000 + Math.random() * 900000),
+    },
+  },
+});
 
         // Listen for Reply
         zk.ev.on("messages.upsert", async (update) => {
@@ -283,13 +289,19 @@ adams(
         }* Previous Page`;
 
         const sentMessage = await zk.sendMessage(chatId, {
-          image: { url: randomImage },
-          caption: message,
-          contextInfo: {
-            forwardingScore: 999,
-            isForwarded: true,
-          },
-        });
+  image: { url: randomImage },
+  caption: message,
+  contextInfo: {
+    mentionedJid: [],
+    forwardingScore: 999,
+    isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: "120363285388090068@newsletter",
+      newsletterName: "BWM-XMD",
+      serverMessageId: Math.floor(100000 + Math.random() * 900000),
+    },
+  },
+});
 
         // Listen for Reply
         zk.ev.on("messages.upsert", async (update) => {
