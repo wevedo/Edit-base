@@ -20,9 +20,6 @@ function validateHerokuConfig(repondre) {
 
 // **Mapping of Environment Variables to User-Friendly Names**
 const configMapping = {
-  ANTICALL: "Anti Call",
-  ANTIDELETE_MESSAGES: "Anti Delete Messages",
-  ANTILINK_GROUP: "Anti Link in Groups",
   AUDIO_CHATBOT: "Audio Chatbot",
   AUTO_BIO: "Auto Bio",
   AUTO_DOWNLOAD_STATUS: "Auto Download Status",
@@ -30,13 +27,18 @@ const configMapping = {
   AUTO_REACT_STATUS: "Auto React Status",
   AUTO_READ: "Auto Read",
   AUTO_READ_STATUS: "Auto Read Status",
-  AUTO_SAVE_CONTACTS: "Auto Save Contacts",
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
   "Auto Typing": "Auto Typing",
   "Always Online": "Always Online",
   "Auto Recording": "Auto Recording",
+  ANTIDELETE_RECOVER_CONVENTION: "Anti Delete Recover Convention",
+  ANTIDELETE_SENT_INBOX: "Anti Delete Sent Inbox",
+  GOODBYE_MESSAGE: "Goodbye Message",
+  AUTO_REJECT_CALL: "Auto Reject Call",
+  WELCOME_MESSAGE: "Welcome Message",
+  GROUPANTILINK: "Group Anti Link"
 };
 
 // **Excluded Variables**
@@ -44,7 +46,7 @@ const EXCLUDED_VARS = [
   "DATA_BASE_URL",
   "MENU_TYPE",
   "CHATBOT1",
-  "NUMERO_OWNER",
+  "OWNER_NUMBER",
   "HEROKU_API_KEY",
   "HEROKU_APP_NAME",
   "BOT_MENU_LINK",
