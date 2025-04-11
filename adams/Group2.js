@@ -159,27 +159,6 @@ adams({ nomCom: "canceltimer", categorie: "Group",reaction: "❌", nomFichier: _
   }
 });
 
-adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, superUser, verifGroupe } = commandeOptions;
-  if (!superUser) { repondre("order reserved for the group only"); return };
-
- try { ppgroup = await zk.profilePictureUrl(dest ,'image') ; } catch { ppgroup = conf.BOT_MENU_LINKS}
-
-    const info = await zk.groupMetadata(dest)
-
-    /*console.log(metadata.id + ", title: " + metadata.subject + ", description: " + metadata.desc)*/
-
-
-    let mess = {
-      image: { url: ppgroup },
-      caption:  `*━━━━『Group Info』━━━━*\n\n*🎐Name:* ${info.subject}\n\n*🔩Group's ID:* ${dest}\n\n*🔍Desc:* \n\n${info.desc}`
-    }
-
-
-    zk.sendMessage(dest, mess, { quoted: ms })
-  });
-
-
 adams({ nomCom: "lockdown", categorie: "Group",reaction: "🚫", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) return repondre("❌ Admin privileges required");
