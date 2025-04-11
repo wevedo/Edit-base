@@ -60,16 +60,17 @@ adams({
 
   // Common newsletter footer
   const newsletterFooter = `
-═══════════════════════
+════════════════
 *BWM XMD MOVIE SEARCH*
-═══════════════════════
+════════════════
 🎥 *Download full movies in my telegram channel for free*
 👉 https://t.me/ibrahimtechai
 > ©Ibrahim Adams 
-═══════════════════════
+════════════════
 ${movieData?.imdbID ? `📌 *IMDb Trailer:* https://www.imdb.com/title/${movieData.imdbID}/` : ''}
 ${trailerData?.url ? `📌 *YouTube Trailer:* ${trailerData.url}` : ''}
-═══════════════════════
+════════════════
+
 `.trim();
 
   // Step 3: Send the best available response
