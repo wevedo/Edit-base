@@ -160,7 +160,7 @@ adams({ nomCom: "canceltimer", categorie: "Group",reaction: "❌", nomFichier: _
 });
 
 adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, verifGroupe } = commandeOptions;
+  const { ms, repondre, superUser, verifGroupe } = commandeOptions;
   if (!superUser) { repondre("order reserved for the group only"); return };
 
  try { ppgroup = await zk.profilePictureUrl(dest ,'image') ; } catch { ppgroup = conf.BOT_MENU_LINKS}
