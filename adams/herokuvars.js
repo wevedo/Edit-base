@@ -277,8 +277,8 @@ adams(
 
         const randomImage =
           Math.random() < 0.5
-            ? "https://files.catbox.moe/xx6ags.jpeg"
-            : "https://files.catbox.moe/dwdau2.jpeg";
+            ? "https://files.catbox.moe/c07f3s.jpeg"
+            : "https://files.catbox.moe/c07f3s.jpeg";
 
         const message = `🌟 *BWM XMD VARS LIST* 🌟\n📌 Reply with a number to toggle a variable\n (Page ${
           pageIndex + 1
