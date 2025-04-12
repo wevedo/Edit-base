@@ -5,9 +5,9 @@ const ytSearch = require("yt-search");
 
 // Random images for newsletter
 const randomImages = [
-  "https://i.imgur.com/J5qweXo.jpg",
-  "https://i.imgur.com/8Km9tLL.jpg",
-  "https://i.imgur.com/5RDBJQy.jpg"
+  "https://files.catbox.moe/2kcb4s.jpeg",
+  "https://files.catbox.moe/2kcb4s.jpeg",
+  "https://files.catbox.moe/2kcb4s.jpeg"
 ];
 
 adams({
@@ -77,7 +77,6 @@ ${trailerData?.url ? `📌 *YouTube Trailer:* ${trailerData.url}` : ''}
   if (trailerData?.downloadUrl && movieData) {
     // Case 1: Both trailer and movie info available
     const movieInfo = `
-${newsletterFooter}
 🎬 *${movieData.Title}* (${movieData.Year})
 ⭐ Rating: ${movieData.imdbRating || 'N/A'} • ${movieData.Rated || 'N/A'}
 ⏳ Runtime: ${movieData.Runtime || 'N/A'}
