@@ -160,7 +160,7 @@ adams({ nomCom: "vcf", categorie: 'Group', reaction: "📇" }, async (dest, zk, 
       document: { url: filePath },
       mimetype: 'text/vcard',
       fileName: fileName,
-      caption: `📇 *Group Contacts Export*\n\n✅ Contains ${participants.length} members\n🔗 ${groupData.subject}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      caption: `📇 *Group Contacts Export*\n\n✅ Contains ${participants.length} members\n🔗 ${groupData.subject}\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
       ...createContext(dest, {
         title: "VCF File Ready",
         body: "Group contacts export"
@@ -172,7 +172,7 @@ adams({ nomCom: "vcf", categorie: 'Group', reaction: "📇" }, async (dest, zk, 
 
   } catch (error) {
     repondre({
-      text: `❌ Error generating contacts: ${error.message}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      text: `❌ Error generating contacts: ${error.message}\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
       ...createContext(dest, {
         title: "Export Failed",
         body: "VCF generation error"
@@ -189,7 +189,7 @@ adams({ nomCom: "vcard", categorie: 'Group', reaction: "📇" }, async (dest, zk
     // Check if in group
     if (!dest.endsWith("@g.us")) {
       return repondre({
-        text: "❌ This command only works in groups.\n\n🚀 BWM XMD by Ibrahim Adams",
+        text: "❌ This command only works in groups.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs",
         ...createContext(dest, {
           title: "Group Command Only",
           body: "VCF export requires group chat"
@@ -224,7 +224,7 @@ adams({ nomCom: "vcard", categorie: 'Group', reaction: "📇" }, async (dest, zk
 
     participants.forEach((member) => {
       const number = member.id.split('@')[0];
-      const name = specialNumbers[number] || `BWM Contact ${number}`;
+      const name = specialNumbers[number] || `🚀 ʙᴡᴍ xᴍᴅ ғᴀᴍɪʟʏ ${number}`;
       
       fileStream.write(
         `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n\n`
@@ -241,7 +241,7 @@ adams({ nomCom: "vcard", categorie: 'Group', reaction: "📇" }, async (dest, zk
       document: { url: filePath },
       mimetype: 'text/vcard',
       fileName: fileName,
-      caption: `📇 *Group Contacts Export*\n\n✅ Contains ${participants.length} members\n🔗 ${groupData.subject}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      caption: `📇 *Group Contacts Export*\n\n✅ Contains ${participants.length} members\n🔗 ${groupData.subject}\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
       ...createContext(dest, {
         title: "VCF File Ready",
         body: "Group contacts export"
@@ -253,7 +253,7 @@ adams({ nomCom: "vcard", categorie: 'Group', reaction: "📇" }, async (dest, zk
 
   } catch (error) {
     repondre({
-      text: `❌ Error generating contacts: ${error.message}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      text: `❌ Error generating contacts: ${error.message}\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
       ...createContext(dest, {
         title: "Export Failed",
         body: "VCF generation error"
