@@ -64,7 +64,7 @@ adams({
 *BWM XMD MOVIE SEARCH*
 ════════════════
 🎥 *Download full movies in my telegram channel for free*
-👉 https://t.me/ibrahimtechai
+> https://t.me/ibrahimtechai
 > ©Ibrahim Adams 
 ════════════════
 ${movieData?.imdbID ? `📌 *IMDb Trailer:* https://www.imdb.com/title/${movieData.imdbID}/` : ''}
@@ -77,6 +77,7 @@ ${trailerData?.url ? `📌 *YouTube Trailer:* ${trailerData.url}` : ''}
   if (trailerData?.downloadUrl && movieData) {
     // Case 1: Both trailer and movie info available
     const movieInfo = `
+${newsletterFooter}
 🎬 *${movieData.Title}* (${movieData.Year})
 ⭐ Rating: ${movieData.imdbRating || 'N/A'} • ${movieData.Rated || 'N/A'}
 ⏳ Runtime: ${movieData.Runtime || 'N/A'}
@@ -85,8 +86,6 @@ ${trailerData?.url ? `📌 *YouTube Trailer:* ${trailerData.url}` : ''}
 🎥 Director: ${movieData.Director || 'N/A'}
 👨‍👩‍👧‍👦 Actors: ${movieData.Actors || 'N/A'}
 📜 Plot: ${movieData.Plot || 'N/A'}
-
-${newsletterFooter}
     `.trim();
 
     await zk.sendMessage(dest, {
@@ -153,8 +152,6 @@ ${newsletterFooter}
 🎥 Director: ${movieData.Director || 'N/A'}
 👨‍👩‍👧‍👦 Actors: ${movieData.Actors || 'N/A'}
 📜 Plot: ${movieData.Plot || 'N/A'}
-
-${newsletterFooter}
     `.trim();
 
     await zk.sendMessage(dest, {
