@@ -41,7 +41,7 @@ const imageUrl = "https://files.catbox.moe/2kcb4s.jpeg";
 
 const githubRawBaseUrl =
   "https://raw.githubusercontent.com/ibrahimadams254/BWM-XMD-QUANTUM/main/tiktokmusic";
-const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
+const audioFiles = Array.from({ length: 100 }, (_, i) => `sound${i + 1}.mp3`);
 
 const formatNumber = (num) => num.toLocaleString();
 
