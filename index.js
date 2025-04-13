@@ -1007,22 +1007,16 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
     const isSuperUser = superUser.includes(auteurMessage);
 
-    // IMPROVED ADMIN CHECK (USES FIXED STANDARDIZATION)
-    let verifAdmin = false;
-    let botIsAdmin = false;
-    if (verifGroupe && infosGroupe) {
-        const admins = infosGroupe.participants
-            .filter(p => p.admin)
-            .map(p => standardizeJid(p.id));
-        verifAdmin = admins.includes(standardizeJid(auteurMessage));
-        botIsAdmin = admins.includes(botJid);
-        
-        console.log('Admin Check Debug:', {
-            admins: admins,
-            sender: standardizeJid(auteurMessage),
-            isAdmin: verifAdmin
-        });
-    }
+// IMPROVED ADMIN CHECK (USES FIXED STANDARDIZATION)
+let verifAdmin = false;
+let botIsAdmin = false;
+if (verifGroupe && infosGroupe) {
+    const admins = infosGroupe.participants
+        .filter(p => p.admin)
+        .map(p => standardizeJid(p.id));
+    verifAdmin = admins.includes(standardizeJid(auteurMessage));
+    botIsAdmin = admins.includes(botJid);
+}
 
     const texte = ms.message?.conversation || 
                  ms.message?.extendedTextMessage?.text || 
