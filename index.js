@@ -535,7 +535,7 @@ function getCurrentDateTime() {
     }).format(new Date());
 }
 
-// Improved Weather fetcher with better error handling (without city name)
+// Improved Weather fetcher with robust error handling
 async function getWeatherUpdate() {
     const apiKey = "060a6bcfa19809c2cd4d97a212b19273";
     const countryCode = getCountryCode();
@@ -543,26 +543,27 @@ async function getWeatherUpdate() {
     try {
         // First try to get country capital
         const countryResponse = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+        if (!countryResponse.ok) throw new Error("Country API failed");
+        
         const countryData = await countryResponse.json();
         const capital = countryData[0]?.capital?.[0] || "Nairobi"; // Fallback to Nairobi
         
         // Then get weather for capital
         const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${capital}&units=metric&appid=${apiKey}&lang=en`);
-        const weatherData = await weatherResponse.json();
+        if (!weatherResponse.ok) throw new Error("Weather API failed");
         
-        if (weatherData.cod !== 200) throw new Error("Weather API error");
+        const weatherData = await weatherResponse.json();
         
         return `🌡️ ${Math.round(weatherData.main.temp)}°C | ${weatherData.weather[0].description} | 💧 ${weatherData.main.humidity}% | 🌬️ ${weatherData.wind.speed}m/s`;
     } catch (error) {
-        console.error("Weather API error:", error.message);
-        
-        // Fallback to default city (Nairobi) if both attempts fail
+        // Fallback to default city (Nairobi) if any attempt fails
         try {
             const fallbackResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Nairobi&units=metric&appid=${apiKey}&lang=en`);
+            if (!fallbackResponse.ok) return null;
+            
             const fallbackData = await fallbackResponse.json();
             return `🌡️ ${Math.round(fallbackData.main.temp)}°C | ${fallbackData.weather[0].description} | 💧 ${fallbackData.main.humidity}% | 🌬️ ${fallbackData.wind.speed}m/s`;
         } catch (fallbackError) {
-            console.error("Fallback weather also failed:", fallbackError.message);
             return null;
         }
     }
