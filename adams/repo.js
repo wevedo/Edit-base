@@ -39,7 +39,7 @@ const axios = require("axios");
 const repository = "ibrahimadams254/BWM-XMD-QUANTUM";
 const imageUrl = "https://files.catbox.moe/2kcb4s.jpeg";
 
-const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimadams254/BWM-XMD-QUANTUM/main/tiktokmusic";
+const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 const audioFiles = Array.from({ length: 100 }, (_, i) => `sound${i + 1}.mp3`);
 
 const formatNumber = (num) => num.toLocaleString();
