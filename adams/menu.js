@@ -90,7 +90,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "⚽ SPORTS MENU": ["FOOTBALL", "GAMES"],
         "📥 DOWNLOAD MENU": ["NEWS", "SEARCH", "IMAGES", "DOWNLOAD"],
         "🛠️ HEROKU MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
+        "💬 CONVERSATION MENU": ["CONVERSION", "LOGO", "MEDIA", "WEEB", "SCREENSHOTS", "IMG", "AUDIO-EDIT", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
         "🌍 GENERAL MENU": ["GENERAL", "MODS", "UTILITY", "MEDIA", "TRADE"],
         "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
