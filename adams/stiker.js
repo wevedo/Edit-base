@@ -1,323 +1,111 @@
+const { adams } = require('../Ibrahim/adams');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const fs = require('fs-extra');
+const path = require('path');
 const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
-const { adams } = require("../Ibrahim/adams");
-const traduire = require("../Ibrahim/traduction");
-const { downloadMediaMessage,downloadContentFromMessage } =  require('@whiskeysockets/baileys');
-const fs =require("fs-extra") ;
-const axios = require('axios');  
-const FormData = require('form-data');
-const { exec } = require("child_process");
 
-
-
-async function uploadToTelegraph(Path) {
-  if (!fs.existsSync(Path)) {
-      throw new Error("Fichier non existant");
-  }
-
-  try {
-      const form = new FormData();
-      form.append("file", fs.createReadStream(Path));
-
-      const { data } = await axios.post("https://telegra.ph/upload", form, {
-          headers: {
-              ...form.getHeaders(),
-          },
-      });
-
-      if (data && data[0] && data[0].src) {
-          return "https://telegra.ph" + data[0].src;
-      } else {
-          throw new Error("Erreur lors de la récupération du lien de la vidéo");
-      }
-  } catch (err) {
-      throw new Error(String(err));
-  }
+// Utility to convert stream to buffer
+async function streamToBuffer(stream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', chunk => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', reject);
+    });
 }
 
 
+// 2. Image to Sticker Command
+adams({
+    nomCom: "sticker",
+    categorie: "Media",
+    reaction: "🖼️➡️🎀",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { ms, repondre, arg } = commandeOptions;
+    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
-adams({ nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+    if (!quotedMsg?.imageMessage && !ms.message?.imageMessage) {
+        return repondre("ℹ️ Please send or reply to an image to convert to sticker");
+    }
+
+    const imageMsg = quotedMsg?.imageMessage || ms.message?.imageMessage;
+    let packName = arg.join(" ") || "Bwm xmd";
+    let authorName = "By Ibrahim Adams";
+
     try {
-        let { ms, mtype, arg, repondre, nomAuteurMessage } = commandeOptions;
-        var txt = JSON.stringify(ms.message);
+        const stream = await downloadContentFromMessage(imageMsg, 'image');
+        const buffer = await streamToBuffer(stream);
+        
+        const sticker = new Sticker(buffer, {
+            pack: packName,
+            author: authorName,
+            type: StickerTypes.FULL,
+            categories: ['🤩', '🎉'],
+            id: '12345',
+            quality: 70,
+            background: 'transparent'
+        });
 
-        var tagImage = mtype === "extendedTextMessage" && txt.includes("imageMessage");
-        var tagVideo = mtype === "extendedTextMessage" && txt.includes("videoMessage");
-
-        const alea = (ext) => `${Math.floor(Math.random() * 10000)}${ext}`;
-        const stickerFileName = alea(".webp");
-
-        let buffer;
-        let sticker;
-
-        if (mtype === "imageMessage" || tagImage) {
-            let downloadFilePath = ms.message.imageMessage 
-                || ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-
-            if (!downloadFilePath) throw new Error("Image not found!");
-
-            const media = await downloadContentFromMessage(downloadFilePath, "image");
-            buffer = Buffer.from([]);
-            for await (const elm of media) {
-                buffer = Buffer.concat([buffer, elm]);
-            }
-
-            sticker = new Sticker(buffer, {
-                pack: "bwm-xmd",
-                author: nomAuteurMessage,
-                type: arg.includes("crop") || arg.includes("c") ? StickerTypes.CROPPED : StickerTypes.FULL,
-                quality: 100,
-            });
-
-        } else if (mtype === "videoMessage" || tagVideo) {
-            let downloadFilePath = ms.message.videoMessage 
-                || ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
-
-            if (!downloadFilePath) throw new Error("Video not found!");
-
-            const stream = await downloadContentFromMessage(downloadFilePath, "video");
-            buffer = Buffer.from([]);
-            for await (const elm of stream) {
-                buffer = Buffer.concat([buffer, elm]);
-            }
-
-            sticker = new Sticker(buffer, {
-                pack: "Bwm xmd",
-                author: nomAuteurMessage,
-                type: arg.includes("-r") || arg.includes("-c") ? StickerTypes.CROPPED : StickerTypes.FULL,
-                quality: 40,
-            });
-
-        } else {
-            throw new Error("Please mention an image or video!");
-        }
-
-        await sticker.toFile(stickerFileName);
-        await zk.sendMessage(origineMessage, { sticker: fs.readFileSync(stickerFileName) }, { quoted: ms });
-
-        try { fs.unlinkSync(stickerFileName); } catch (e) { console.log(e); }
-
-    } catch (error) {
-        console.error(error);
-        repondre(`❌ Error: ${error.message}`);
+        await zk.sendMessage(dest, await sticker.toMessage(), { quoted: ms });
+    } catch (err) {
+        console.error("Error creating sticker:", err);
+        await repondre(`❌ Failed to create sticker: ${err.message}`);
     }
 });
 
-adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
-   const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
+// 3. Sticker to Image Command
+adams({
+    nomCom: "toimage",
+    categorie: "Media",
+    reaction: "🎀➡️🖼️",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { ms, repondre } = commandeOptions;
+    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
-  if(!msgRepondu) { repondre( 'make sure to mention the media' ) ; return } ;
-  if(!(arg[0])) {
-       pack = nomAuteurMessage
-  } else {
-    pack = arg.join(' ')
-  } ;
-  if (msgRepondu.imageMessage) {
-     mediamsg = msgRepondu.imageMessage
-  } else if(msgRepondu.videoMessage) {
-mediamsg = msgRepondu.videoMessage
-  } 
-  else if (msgRepondu.stickerMessage) {
-    mediamsg = msgRepondu.stickerMessage ;
-  } else {
-    repondre('Uh media please'); return
-  } ;
+    if (!quotedMsg?.stickerMessage) {
+        return repondre("ℹ️ Please reply to a sticker to convert to image");
+    }
 
-  var stick = await zk.downloadAndSaveMediaMessage(mediamsg)
-
-     let stickerMess = new Sticker(stick, {
-            pack: pack,
-            
-            type: StickerTypes.CROPPED,
-            categories: ["🤩", "🎉"],
-            id: "12345",
-            quality: 70,
-            background: "transparent",
-          });
-          const stickerBuffer2 = await stickerMess.toBuffer();
-          zk.sendMessage(origineMessage, { sticker: stickerBuffer2 }, { quoted: ms });
-
+    try {
+        const stream = await downloadContentFromMessage(quotedMsg.stickerMessage, 'image');
+        const buffer = await streamToBuffer(stream);
+        
+        await zk.sendMessage(dest, {
+            image: buffer,
+            caption: "Here's your image from sticker"
+        }, { quoted: ms });
+    } catch (err) {
+        console.error("Error converting sticker to image:", err);
+        await repondre(`❌ Failed to convert sticker to image: ${err.message}`);
+    }
 });
 
-adams({nomCom:"take",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
-   const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
+// 4. Animated Sticker to Video Command
+adams({
+    nomCom: "tovideo",
+    categorie: "Media",
+    reaction: "🎀➡️🎥",
+    nomFichier: __filename
+}, async (dest, zk, commandeOptions) => {
+    const { ms, repondre } = commandeOptions;
+    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
-  if(!msgRepondu) { repondre( 'make sure to mention the media' ) ; return } ;
-  if(!(arg[0])) {
-       pack = nomAuteurMessage
-  } else {
-    pack = arg.join(' ')
-  } ;
-  if (msgRepondu.imageMessage) {
-     mediamsg = msgRepondu.imageMessage
-  } else if(msgRepondu.videoMessage) {
-mediamsg = msgRepondu.videoMessage
-  } 
-  else if (msgRepondu.stickerMessage) {
-    mediamsg = msgRepondu.stickerMessage ;
-  } else {
-    repondre('Uh a media please'); return
-  } ;
+    if (!quotedMsg?.stickerMessage || !quotedMsg.stickerMessage.isAnimated) {
+        return repondre("ℹ️ Please reply to an animated sticker to convert to video");
+    }
 
-  var stick = await zk.downloadAndSaveMediaMessage(mediamsg)
-
-     let stickerMess = new Sticker(stick, {
-            pack: pack,
-            
-            type: StickerTypes.FULL,
-            categories: ["🤩", "🎉"],
-            id: "12345",
-            quality: 70,
-            background: "transparent",
-          });
-          const stickerBuffer2 = await stickerMess.toBuffer();
-          zk.sendMessage(origineMessage, { sticker: stickerBuffer2 }, { quoted: ms });
-
+    try {
+        const stream = await downloadContentFromMessage(quotedMsg.stickerMessage, 'video');
+        const buffer = await streamToBuffer(stream);
+        
+        await zk.sendMessage(dest, {
+            video: buffer,
+            caption: "Here's your video from animated sticker"
+        }, { quoted: ms });
+    } catch (err) {
+        console.error("Error converting sticker to video:", err);
+        await repondre(`❌ Failed to convert animated sticker to video: ${err.message}`);
+    }
 });
-
-
-
-adams({ nomCom: "write", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
-  const { ms, msgRepondu, arg, repondre, nomAuteurMessage } = commandeOptions;
-
-  if (!msgRepondu) {
-    repondre('Please mention an image');
-    return;
-  }
-
-  if (!msgRepondu.imageMessage) {
-    repondre('The command only works with images');
-    return;
-  } ;
-  text = arg.join(' ') ;
-  
-  if(!text || text === null) {repondre('Make sure to insert text') ; return } ;
- 
-  
-  const mediamsg = msgRepondu.imageMessage;
-  const image = await zk.downloadAndSaveMediaMessage(mediamsg);
-
-  //Create a FormData object
-  const data = new FormData();
-  data.append('image', fs.createReadStream(image));
-
-  //Configure headers
-  const clientId = 'b40a1820d63cd4e'; // Replace with your Imgur client ID
-  const headers = {
-    'Authorization': `Client-ID ${clientId}`,
-    ...data.getHeaders()
-  };
-
-  // Configure the query
-  const config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: 'https://api.imgur.com/3/image',
-    headers: headers,
-    data: data
-  };
-
-  try {
-    const response = await axios(config);
-    const imageUrl = response.data.data.link;
-    console.log(imageUrl)
-
-    //Use imageUrl however you want (meme creation, etc.)
-    const meme = `https://api.memegen.link/images/custom/-/${text}.png?background=${imageUrl}`;
-
-    // Create the sticker
-    const stickerMess = new Sticker(meme, {
-      pack: nomAuteurMessage,
-      author: 'Zokou-Md',
-      type: StickerTypes.FULL,
-      categories: ["🤩", "🎉"],
-      id: "12345",
-      quality: 70,
-      background: "transparent",
-    });
-
-    const stickerBuffer2 = await stickerMess.toBuffer();
-    zk.sendMessage(
-      origineMessage,
-      { sticker: stickerBuffer2 },
-      { quoted: ms }
-    );
-
-  } catch (error) {
-    console.error('Error uploading to Imgur :', error);
-    repondre('An error occurred while creating the meme.');
-  }
-});
-
-
-
-adams({nomCom:"photo",categorie: "Conversion", reaction: "👨🏿‍💻"},async(dest,zk,commandeOptions)=>{
-   const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
-
-  if(!msgRepondu) { repondre( 'make sure to mention the media' ) ; return } ;
- 
-   if (!msgRepondu.stickerMessage) {
-      repondre('Um mention a non-animated sticker'); return
-  } ;
-
- let mediaMess = await zk.downloadAndSaveMediaMessage(msgRepondu.stickerMessage);
-
-  const alea = (ext) => {
-  return `${Math.floor(Math.random() * 10000)}${ext}`;};
-  
-  let ran = await alea(".png");
-
-  
-        exec(`ffmpeg -i ${mediaMess} ${ran}`, (err) => {
-          fs.unlinkSync(mediaMess);
-          if (err) {
-            zk.sendMessage(
-              dest,
-              {
-                text: 'A non-animated sticker please',
-              },
-              { quoted: ms }
-            );
-            return;
-          }
-          let buffer = fs.readFileSync(ran);
-          zk.sendMessage(
-            dest,
-            { image: buffer },
-            { quoted: ms }
-          );
-          fs.unlinkSync(ran);
-        });
-});
-
-adams({ nomCom: "trt", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (dest, zk, commandeOptions) => {
-
-  const { msgRepondu, repondre , arg } = commandeOptions;
-
-  
-   if(msgRepondu) {
-     try {
-      
-     
-
-       if(!arg || !arg[0]) { repondre('(eg : trt en)') ; return }
-   
-
-         let texttraduit = await traduire(msgRepondu.conversation , {to : arg[0]}) ;
-
-         repondre(texttraduit)
-
-        } catch (error) {
-          
-          repondre('Mention a texte Message') ;
-      
-        }
-
-   } else {
-     
-     repondre('Mention a texte Message')
-   }
-
-
-
-}) ;
