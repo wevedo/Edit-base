@@ -599,7 +599,7 @@ if (conf.CHATBOT === "yes" || conf.CHATBOT1 === "yes") {
                 await adams.sendMessage(jid, { 
                     text: String(aiResponse),
                     ...createContext(jid, {
-                        title: "BWM XMD ANSWER",
+                        title: "ʙᴡᴍ xᴍᴅ ᴄʜᴀᴛʙᴏᴛ ᴄᴏɴᴠᴇʀsᴀᴛɪᴏɴ",
                         body: "Powered by Ibrahim Adams"
                     })
                 }, { quoted: msg });
