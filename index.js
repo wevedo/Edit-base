@@ -554,7 +554,7 @@ async function getAIResponse(query) {
             }
 
             if (isIdentityQuestion) {
-                aiResponse = 'Im BWM XMD created by Ibrahim Adams! 🚀';
+                aiResponse = 'I am BWM XMD, created by Ibrahim Adams! 🚀';
             }
             
             return aiResponse;
@@ -562,7 +562,7 @@ async function getAIResponse(query) {
             // If JSON parse fails, try to get as text
             const textResponse = await response.text();
             return isIdentityQuestion 
-                ? `I'm BWM XMD, created by Ibrahim Adams! 🚀\n\n${textResponse}`
+                ? `I am BWM XMD, created by Ibrahim Adams! 🚀`
                 : textResponse;
         }
     } catch (error) {
@@ -599,7 +599,7 @@ if (conf.CHATBOT === "yes" || conf.CHATBOT1 === "yes") {
                 await adams.sendMessage(jid, { 
                     text: String(aiResponse),
                     ...createContext(jid, {
-                        title: "BWM XMD Response",
+                        title: "BWM XMD ANSWER",
                         body: "Powered by Ibrahim Adams"
                     })
                 }, { quoted: msg });
@@ -620,8 +620,8 @@ if (conf.CHATBOT === "yes" || conf.CHATBOT1 === "yes") {
                         mimetype: "audio/mpeg",
                         ptt: true,
                         ...createContext2(jid, {
-                            title: "BWM XMD Voice",
-                            body: "AI Response"
+                            title: "BWM XMD VOICE",
+                            body: "AI SPEECH"
                         })
                     }, { quoted: msg });
                 }
