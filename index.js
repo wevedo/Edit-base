@@ -600,7 +600,7 @@ if (conf.CHATBOT === "yes" || conf.CHATBOT1 === "yes") {
                     text: String(aiResponse),
                     ...createContext(jid, {
                         title: "ʙᴡᴍ xᴍᴅ ᴄʜᴀᴛʙᴏᴛ ᴄᴏɴᴠᴇʀsᴀᴛɪᴏɴ",
-                        body: "Powered by Ibrahim Adams"
+                        body: "ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs"
                     })
                 }, { quoted: msg });
             }
@@ -620,8 +620,8 @@ if (conf.CHATBOT === "yes" || conf.CHATBOT1 === "yes") {
                         mimetype: "audio/mpeg",
                         ptt: true,
                         ...createContext2(jid, {
-                            title: "BWM XMD VOICE",
-                            body: "AI SPEECH"
+                            title: "ʙᴡᴍ xᴍᴅ ᴀᴜᴅɪᴏ_ᴄʜᴀᴛʙᴏᴛ",
+                            body: "ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs"
                         })
                     }, { quoted: msg });
                 }
