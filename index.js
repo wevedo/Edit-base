@@ -525,12 +525,37 @@ function processForTTS(text) {
 
 async function getAIResponse(query) {
     const identityPatterns = [
-        /who\s*(made|created|built)\s*you/i,
-        /who\s*is\s*your\s*(creator|developer|maker)/i,
-        /what('?s| is) your name/i,
-        /are\s*you\s*bwm/i,
-        /you\s*called\s*bwm/i
-    ];
+    /who\s*(made|created|built)\s*you/i,
+    /who\s*is\s*your\s*(creator|developer|maker|owner|father|parent)/i,
+    /what('?s| is)\s*your\s*name\??/i,
+    /who\s*are\s*you\??/i,
+    /who\s*a?you\??/i,
+    /who\s*au\??/i,
+    /what('?s| is)\s*ur\s*name\??/i,
+    /wat('?s| is)\s*(ur|your)\s*name\??/i,
+    /wats?\s*(ur|your)\s*name\??/i,
+    /wot('?s| is)\s*(ur|your)\s*name\??/i,
+    /hoo\s*r\s*u\??/i,
+    /who\s*u\??/i,
+    /whos\s*u\??/i,
+    /whos?\s*this\??/i,
+    /you\s*called\s*bwm/i,
+    /are\s*you\s*bwm/i,
+    /are\s*u\s*bwm/i,
+    /u\s*bwm\??/i,
+    /who\s*is\s*your\s*boss\??/i,
+    /who\s*ur\s*boss\??/i,
+    /who\s*your\s*boss\??/i,
+    /whoa\s*created\s*you\??/i,
+    /who\s*made\s*u\??/i,
+    /who\s*create\s*u\??/i,
+    /who\s*built\s*u\??/i,
+    /who\s*ur\s*owner\??/i,
+    /who\s*is\s*u\??/i,
+    /what\s*are\s*you\??/i,
+    /what\s*r\s*u\??/i,
+    /wat\s*r\s*u\??/i
+];
 
     const isIdentityQuestion = identityPatterns.some(pattern => 
         typeof query === 'string' && pattern.test(query)
