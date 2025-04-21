@@ -506,8 +506,8 @@ const googleTTS = require("google-tts-api");
 const { createContext2 } = require("./Ibrahim/helper2");
 
 const availableApis = [
-    "https://bk9.fun/ai/jeeves-chat2?q=",
-    "https://bk9.fun/ai/jeeves-chat?q=",
+   // "https://bk9.fun/ai/jeeves-chat2?q=",
+    "https://bk9.fun/ai/google-thinking?q=",
     "https://bk9.fun/ai/llama?q=",
     "https://bk9.fun/ai/Aoyo?q="
 ];
@@ -554,7 +554,7 @@ async function getAIResponse(query) {
             }
 
             if (isIdentityQuestion) {
-                aiResponse = `I'm BWM XMD, created by Ibrahim Adams! 🚀\n\n${aiResponse}`;
+                aiResponse = 'Im BWM XMD created by Ibrahim Adams! 🚀';
             }
             
             return aiResponse;
