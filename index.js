@@ -82,7 +82,7 @@ async function authentification() {
             if (header === "BWM-XMD" && b64data) {
                 let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
                 let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/adams/creds.json", decompressedData, "utf8"); // Save to file
+                fs.writeFileSync(__dirname + "/bwmxmd/creds.json", decompressedData, "utf8"); // Save to file
             } else {
                 throw new Error("Invalid session format");
             }
