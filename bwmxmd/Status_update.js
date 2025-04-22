@@ -88,12 +88,12 @@ if (config.AUTO_REPLY_STATUS === "yes") {
                 const now = Date.now();
                 const lastNotification = lastNotified.get(statusSender) || 0;
                 
-                // Only notify if at least 5 seconds passed since last notification
+                // Only notify if at least 5 minutes passed since last notification
                 if (now - lastNotification > 300000) {
                     lastNotified.set(statusSender, now);
                     
                     await adams.sendMessage(statusSender, {
-                        text: `*ʏᴏᴜʀ sᴛᴀᴛᴜs ʜᴀᴠᴇ ʙᴇᴇɴ ᴠɪᴇᴡᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ ✅*${' '}
+                        text: `${config.REPLY_STATUS_TEXT || "*ʏᴏᴜʀ sᴛᴀᴛᴜs ʜᴀᴠᴇ ʙᴇᴇɴ ᴠɪᴇᴡᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ ✅*"}${' '}
 > ǫᴜᴀɴᴛᴜᴍ ᴠɪᴇᴡᴇʀ`,
                         contextInfo: {
                             forwardingScore: 999,
@@ -112,7 +112,6 @@ if (config.AUTO_REPLY_STATUS === "yes") {
         }
     });
 }
-
         // ==================== AUTO REACT TO MESSAGES ====================
         if (config.AUTO_REACT === "yes") {
             logger.info("[React] Auto-react to messages enabled");
