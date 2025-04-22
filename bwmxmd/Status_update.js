@@ -28,71 +28,90 @@ module.exports = {
         }
 
         // ==================== STATUS READ ====================
-        if (config.AUTO_READ_STATUS === "yes") {
-            logger.info("[Status] Auto-read enabled for status updates");
-            
-            adams.ev.on("messages.upsert", async (m) => {
-                try {
-                    const statusUpdates = m.messages.filter(
-                        msg => msg.key?.remoteJid === "status@broadcast"
-                    );
-                    if (statusUpdates.length > 0) {
-                        await adams.readMessages(statusUpdates.map(msg => msg.key));
-                    }
-                } catch (err) {
-                    logger.error("[Status] Read error:", err);
-                }
-            });
+        // Auto-read status updates (always enabled if AUTO_READ_STATUS is yes)
+if (config.AUTO_READ_STATUS === "yes") {
+    logger.info("[Status] Auto-read enabled for status updates");
+    
+    adams.ev.on("messages.upsert", async (m) => {
+        try {
+            const statusUpdates = m.messages.filter(
+                msg => msg.key?.remoteJid === "status@broadcast"
+            );
+            if (statusUpdates.length > 0) {
+                await adams.readMessages(statusUpdates.map(msg => msg.key));
+            }
+        } catch (err) {
+            logger.error("[Status] Read error:", err);
         }
-
-
-        // ==================== STATUS DOWNLOAD ====================
-        if (config.AUTO_DOWNLOAD_STATUS === "yes" && config.STATUS_LOG_JID) {
-            logger.info("[Status] Auto-download enabled");
-            
-            adams.ev.on("messages.upsert", async (m) => {
-                try {
-                    const statusMessages = m.messages.filter(
-                        msg => msg.key?.remoteJid === "status@broadcast"
-                    );
-
-                    for (const status of statusMessages) {
-                        // Mark as read first if enabled
-                        if (config.AUTO_READ_STATUS === "yes") {
-                            await adams.readMessages([status.key]);
-                        }
-
-                        if (status.message?.extendedTextMessage) {
-                            await adams.sendMessage(config.STATUS_LOG_JID, {
-                                text: `📢 Status Update:\n${status.message.extendedTextMessage.text}\n\n` +
-                                      `🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid)
-                            });
-                        } 
-                        else if (status.message?.imageMessage) {
-                            const media = await adams.downloadMediaMessage(status.message.imageMessage);
-                            await adams.sendMessage(config.STATUS_LOG_JID, {
-                                image: media,
-                                caption: (status.message.imageMessage.caption || "📸 Status Image") + 
-                                        `\n\n🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid)
-                            });
-                        }
-                        else if (status.message?.videoMessage) {
-                            const media = await adams.downloadMediaMessage(status.message.videoMessage);
-                            await adams.sendMessage(config.STATUS_LOG_JID, {
-                                video: media,
-                                caption: (status.message.videoMessage.caption || "🎥 Status Video") + 
-                                        `\n\n🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid)
-                            });
-                        }
-                    }
-                } catch (err) {
-                    logger.error("[Status] Download error:", err);
-                }
-            });
+    });
+}
+// Auto-read status updates (always enabled if AUTO_READ_STATUS is yes)
+if (config.AUTO_READ_STATUS === "yes") {
+    logger.info("[Status] Auto-read enabled for status updates");
+    
+    adams.ev.on("messages.upsert", async (m) => {
+        try {
+            const statusUpdates = m.messages.filter(
+                msg => msg.key?.remoteJid === "status@broadcast" && 
+                      !msg.key.participant?.includes(adams.user.id.split(':')[0])
+            );
+            if (statusUpdates.length > 0) {
+                await adams.readMessages(statusUpdates.map(msg => msg.key));
+            }
+        } catch (err) {
+            logger.error("[Status] Read error:", err);
         }
+    });
+}
+
+// Status viewed notification (only if AUTO_REPLY_STATUS is yes)
+if (config.AUTO_REPLY_STATUS === "yes") {
+    logger.info("[Status] Auto-reply enabled for status views");
+    
+    // Track last notification time to prevent spamming
+    const lastNotified = new Map();
+    
+    adams.ev.on("messages.upsert", async (m) => {
+        try {
+            const statusUpdates = m.messages.filter(
+                msg => msg.key?.remoteJid === "status@broadcast" && 
+                      !msg.key.participant?.includes(adams.user.id.split(':')[0])
+            );
+            
+            if (statusUpdates.length > 0) {
+                const statusSender = statusUpdates[0].key.participant;
+                
+                // Skip if it's your own status
+                if (!statusSender || statusSender.includes(adams.user.id.split(':')[0])) return;
+                
+                // Check if we recently notified this sender
+                const now = Date.now();
+                const lastNotification = lastNotified.get(statusSender) || 0;
+                
+                // Only notify if at least 5 seconds passed since last notification
+                if (now - lastNotification > 5000) {
+                    lastNotified.set(statusSender, now);
+                    
+                    await adams.sendMessage(statusSender, {
+                        text: `*ʏᴏᴜʀ sᴛᴀᴛᴜs ʜᴀᴠᴇ ʙᴇᴇɴ ᴠɪᴇᴡᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ ✅*${' '}
+> ǫᴜᴀɴᴛᴜᴍ ᴠɪᴇᴡᴇʀ`,
+                        contextInfo: {
+                            forwardingScore: 999,
+                            isForwarded: true,
+                            forwardedNewsletterMessageInfo: {
+                                newsletterJid: "120363285388090068@newsletter",
+                                newsletterName: "BWM-XMD",
+                                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+                            },
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            logger.error("[Status] Reply error:", err);
+        }
+    });
+}
 
         // ==================== AUTO REACT TO MESSAGES ====================
         if (config.AUTO_REACT === "yes") {
