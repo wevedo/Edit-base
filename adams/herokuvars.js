@@ -38,7 +38,8 @@ const configMapping = {
   GOODBYE_MESSAGE: "Goodbye Message",
   AUTO_REJECT_CALL: "Auto Reject Call",
   WELCOME_MESSAGE: "Welcome Message",
-  GROUPANTILINK: "Group Anti Link"
+  GROUPANTILINK: "Group Anti Link",
+  AUTO_REPLY_STATUS: "Auto reply status"
 };
 
 // **Excluded Variables**
