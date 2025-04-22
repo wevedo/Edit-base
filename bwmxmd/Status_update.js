@@ -89,7 +89,7 @@ if (config.AUTO_REPLY_STATUS === "yes") {
                 const lastNotification = lastNotified.get(statusSender) || 0;
                 
                 // Only notify if at least 5 seconds passed since last notification
-                if (now - lastNotification > 5000) {
+                if (now - lastNotification > 300000) {
                     lastNotified.set(statusSender, now);
                     
                     await adams.sendMessage(statusSender, {
