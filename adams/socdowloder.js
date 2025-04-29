@@ -9,7 +9,7 @@ const ytSearch = require("yt-search");
 
 // Helper function to extract response from various API formats
 function extractResponse(data) {
-    const possibleFields = ['download_url', 'url', 'HD', 'hd', 'withoutwatermark' 'result', 'response', 'BK9', 'message', 'data', 'video', 'audio'];
+    const possibleFields = ['download_url', 'alternativeUrl', 'url', 'HD', 'hd', 'withoutwatermark' 'result', 'response', 'BK9', 'message', 'data', 'video', 'audio'];
     for (const field of possibleFields) {
         if (data[field]) {
             if (typeof data[field] === 'object') {
