@@ -80,7 +80,7 @@ const EXCLUDED_VARS = [
 // **Command to Display and Modify Variables**
 adams(
   {
-    nomCom: "getallvar",
+    nomCom: "getallvar2",
     categorie: "Control",
   },
   async (chatId, zk, context) => {
@@ -236,7 +236,7 @@ adams(
 // Alias for getallvar
 adams(
   {
-    nomCom: "settings",
+    nomCom: "settings2",
     categorie: "Control",
   },
   async (chatId, zk, context) => {
@@ -248,7 +248,7 @@ adams(
 
 // Command to set or update environment variables
 adams({
-  nomCom: 'setvar',
+  nomCom: 'setvar2',
   categorie: "Control"
 }, async (chatId, zk, context) => {
   const { repondre, superUser, arg } = context;
