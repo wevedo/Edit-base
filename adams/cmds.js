@@ -67,7 +67,6 @@ commandTriggers.forEach(trigger => {
 👤 ᴜsᴇʀ ɴᴀᴍᴇ: ${userName}
 📅 ᴅᴀᴛᴇ: ${date}
 ⏰ ᴛɪᴍᴇ: ${time}
-👥 ʙᴡᴍ ᴜsᴇʀs: ${Object.keys(categories).reduce((acc, curr) => acc + categories[curr].length, 0)}
 
 📊 *CATEGORIES (${Object.keys(categories).length})*
 ${categorySummary}
