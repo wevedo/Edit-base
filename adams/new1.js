@@ -4,7 +4,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // Path to your config.env file
-const envPath = path.join(__dirname, '../../config.env');
+const envPath = path.join(__dirname, '/../config.env');
 
 // Initialize environment variables
 dotenv.config({ path: envPath });
@@ -19,29 +19,39 @@ function reloadEnv() {
 
 // Function to update .env file and reload
 function updateEnv(key, value) {
-  // Read current .env file
-  let envContents = fs.readFileSync(envPath, 'utf8');
-  let updated = false;
-  
-  // Update existing variable or add new one
-  const lines = envContents.split('\n');
-  const newLines = lines.map(line => {
-    if (line.startsWith(key + '=')) {
-      updated = true;
-      return `${key}=${value}`;
+  try {
+    // Read current .env file
+    let envContents = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+    let lines = envContents.split('\n');
+    let updated = false;
+    
+    // Update existing variable
+    lines = lines.map(line => {
+      if (line.startsWith(key + '=')) {
+        updated = true;
+        return `${key}=${value}`;
+      }
+      return line;
+    });
+    
+    // Add new variable if not found
+    if (!updated) {
+      lines.push(`${key}=${value}`);
     }
-    return line;
-  });
-  
-  if (!updated) {
-    newLines.push(`${key}=${value}`);
+    
+    // Filter out empty lines
+    lines = lines.filter(line => line.trim() !== '');
+    
+    // Write back to file
+    fs.writeFileSync(envPath, lines.join('\n'));
+    
+    // Reload environment variables
+    reloadEnv();
+    return true;
+  } catch (error) {
+    console.error('UpdateEnv error:', error);
+    return false;
   }
-  
-  // Write back to file
-  fs.writeFileSync(envPath, newLines.join('\n'));
-  
-  // Reload environment variables
-  reloadEnv();
 }
 
 // **Mapping of Environment Variables to User-Friendly Names**
@@ -71,10 +81,10 @@ const EXCLUDED_VARS = [
   "SESSION_ID"
 ];
 
-// **Command to Display and Modify Variables**
+// **Main Command to Display and Modify Variables**
 adams(
   {
-    nomCom: ["getallvar", "settings"],
+    nomCom: "getallvar",
     categorie: "Control",
   },
   async (chatId, zk, context) => {
@@ -86,6 +96,7 @@ adams(
 
     try {
       // Read current variables
+      reloadEnv(); // Refresh env variables first
       const currentVars = process.env;
       let options = [];
       let index = 1;
@@ -95,12 +106,12 @@ adams(
         if (EXCLUDED_VARS.includes(key)) continue;
         
         const currentValue = currentVars[key] || 'no';
-        const isEnabled = currentValue === 'yes';
+        const isEnabled = currentValue === 'yes' || currentValue === 'true';
         
         options.push({
           number: index++,
-          name: `${name}`,
-          action: 'enable',
+          name: name,
+          key: key,
           current: isEnabled ? '✅ Enabled' : '❌ Disabled'
         });
       }
@@ -133,8 +144,8 @@ adams(
 
         // Handle user response
         const responseHandler = async (m) => {
+          if (!m.message?.extendedTextMessage?.contextInfo?.stanzaId) return;
           if (m.key.remoteJid !== chatId) return;
-          if (!m.message.extendedTextMessage) return;
           if (m.message.extendedTextMessage.contextInfo.stanzaId !== sentMsg.key.id) return;
           
           const choice = m.message.extendedTextMessage.text.trim();
@@ -155,16 +166,20 @@ adams(
           if (selectedOpt) {
             zk.ev.off('messages.upsert', responseHandler);
             
-            const varKey = Object.keys(configMapping).find(
-              k => configMapping[k] === selectedOpt.name
-            );
+            const currentValue = currentVars[selectedOpt.key] || 'no';
+            const newValue = currentValue === 'yes' ? 'no' : 'yes';
             
-            const newValue = selectedOpt.current.includes('Enabled') ? 'no' : 'yes';
-            updateEnv(varKey, newValue);
+            const success = updateEnv(selectedOpt.key, newValue);
             
-            await zk.sendMessage(chatId, {
-              text: `⚡ *${selectedOpt.name}* set to *${newValue === 'yes' ? 'ENABLED' : 'DISABLED'}*`
-            });
+            if (success) {
+              await zk.sendMessage(chatId, {
+                text: `⚡ *${selectedOpt.name}* set to *${newValue === 'yes' ? 'ENABLED' : 'DISABLED'}*`
+              });
+            } else {
+              await zk.sendMessage(chatId, {
+                text: `❌ Failed to update ${selectedOpt.name}`
+              });
+            }
           }
         };
         
@@ -179,7 +194,7 @@ adams(
   }
 );
 
-// Command to set variables directly
+// Improved setvar command
 adams(
   {
     nomCom: "setvar",
@@ -189,56 +204,40 @@ adams(
   async (chatId, zk, context) => {
     const { repondre, arg, superUser } = context;
     
-    if (!superUser) return repondre("Owner only command");
-    if (!arg || !arg[0]) {
+    if (!superUser) return repondre("🚫 Owner only command");
+    
+    if (!arg || arg.length < 1 || !arg[0].includes('=')) {
       return repondre(
         "📝 *Usage:*\n" +
         "```setvar VARIABLE=value```\n" +
-        "Example:\n" +
+        "Examples:\n" +
         "```setvar PREFIX=!```\n" +
-        "```setvar AUTO_REPLY=yes```"
+        "```setvar AUTO_REPLY=yes```\n" +
+        "```setvar BOT_NAME=MyBot```"
       );
     }
     
-    const [varName, value] = arg.join(' ').split('=');
-    if (!varName || !value) {
-      return repondre("Invalid format. Use VARIABLE=value");
+    const input = arg.join(' ');
+    const equalsIndex = input.indexOf('=');
+    
+    if (equalsIndex === -1 || equalsIndex === 0 || equalsIndex === input.length - 1) {
+      return repondre("❌ Invalid format. Use VARIABLE=value");
     }
     
+    const varName = input.substring(0, equalsIndex).trim();
+    const value = input.substring(equalsIndex + 1).trim();
+    
     try {
-      updateEnv(varName.trim(), value.trim());
-      repondre(`✅ *${varName}* set to *${value}*`);
+      const success = updateEnv(varName, value);
+      
+      if (success) {
+        repondre(`✅ *${varName}* set to:\n\`\`\`${value}\`\`\``);
+      } else {
+        repondre(`❌ Failed to update *${varName}*`);
+      }
     } catch (error) {
       console.error('Setvar error:', error);
-      repondre('❌ Failed to update variable');
-    }
-  }
-);
-
-// Command to view all variables
-adams(
-  {
-    nomCom: "allvars",
-    categorie: "Control",
-    description: "View all environment variables"
-  },
-  async (chatId, zk, context) => {
-    const { repondre, superUser } = context;
-    if (!superUser) return repondre("Owner only command");
-    
-    try {
-      const vars = process.env;
-      let message = "📜 *Environment Variables:*\n\n";
-      
-      for (const [key, value] of Object.entries(vars)) {
-        if (key.startsWith('npm_') || key === 'PATH') continue;
-        message += `*${key}*: ${value}\n`;
-      }
-      
-      await zk.sendMessage(chatId, { text: message });
-    } catch (error) {
-      console.error('Allvars error:', error);
-      repondre('❌ Error reading variables');
+      repondre('❌ Error updating variable');
     }
   }
 );
