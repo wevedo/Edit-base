@@ -1,4 +1,4 @@
-const { adams } = require("../Ibrahim/adams");
+/*const { adams } = require("../Ibrahim/adams");
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -241,3 +241,4 @@ adams(
     }
   }
 );
+*/
