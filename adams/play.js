@@ -58,9 +58,8 @@ adams(
           const encodedUrl = encodeURIComponent(videoUrl);
           
           const audioApis = [
-            `https://api.giftedtech.my.id/api/download/ytmp3?apikey=${apiKey}&url=${encodedUrl}`,
-            `https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodedUrl}`,
             `https://api.giftedtech.my.id/api/download/ytmusic?apikey=${apiKey}&url=${encodedUrl}`,
+            `https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodedUrl}`,
             `https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodedUrl}`
           ];
 
