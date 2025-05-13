@@ -2,7 +2,6 @@ const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
 const ytSearch = require("yt-search");
 
-
 // Audio command configuration
 adams(
   {
@@ -22,19 +21,10 @@ adams(
     let waitMessage = null;
 
     try {
-      // Send initial message with newsletter context
+      // Send initial message
       waitMessage = await zk.sendMessage(
         dest, 
-        { 
-          text: "🔍 Finding your song... Please wait",
-          contextInfo: {
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: '120363285388090068@newsletter',
-              newsletterName: "BWM-XMD Downloads",
-              serverMessageId: Math.floor(Math.random() * 1000),
-            }
-          }
-        }, 
+        { text: "🔍 Finding your song... Please wait" }, 
         { 
           quoted: ms,
           disappearingMessagesInChat: true,
@@ -52,8 +42,18 @@ adams(
           const videoDuration = video.timestamp || "Unknown";
           const videoThumbnail = video.thumbnail || "https://files.catbox.moe/sd49da.jpg";
 
-          // Smooth message edit
-          await smoothEdit(waitMessage, "⬇️ Getting your audio ready...");
+          // Update message smoothly
+          await zk.sendMessage(
+            dest, 
+            { 
+              text: "⬇️ Getting your audio ready...",
+              edit: waitMessage.key 
+            },
+            {
+              disappearingMessagesInChat: true,
+              ephemeralExpiration: 24*60*60
+            }
+          );
 
           const apiKey = '_0x5aff35,_0x1876stqr';
           const encodedUrl = encodeURIComponent(videoUrl);
@@ -86,10 +86,13 @@ adams(
               mimetype: "audio/mpeg",
               fileName: `${videoTitle.substring(0, 50)}.mp3`,
               contextInfo: {
+                mentionedJid: [ms.sender],
+                forwardingScore: 999,
+                isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: '120363285388090068@newsletter',
-                  newsletterName: "BWM-XMD Downloads",
-                  serverMessageId: Math.floor(Math.random() * 1000),
+                  newsletterName: "BWM-XMD",
+                  serverMessageId: 143,
                 },
                 externalAdReply: {
                   title: videoTitle,
@@ -105,20 +108,41 @@ adams(
 
             await zk.sendMessage(dest, audioPayload, { quoted: ms });
             
-            // Final smooth edit
-            await smoothEdit(waitMessage, "✅ Your audio is ready!");
+            // Final update
+            await zk.sendMessage(
+              dest, 
+              { 
+                text: "✅ Your audio is ready!",
+                edit: waitMessage.key 
+              },
+              {
+                disappearingMessagesInChat: true,
+                ephemeralExpiration: 24*60*60
+              }
+            );
             return;
           }
         }
       } catch (ytError) {
         console.log("YouTube download failed, trying SoundCloud...");
-        await smoothEdit(waitMessage, "🔍 Trying another source...");
       }
 
       // 2. Try SoundCloud if YouTube fails
       try {
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "🔍 Checking another source...",
+            edit: waitMessage.key 
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
+
         // Search SoundCloud
-        const scSearch = await axios.get(`https://apis-keith.vercel.app/search/soundcloud?q=${encodeURIComponent(query)}`);
+        const scSearch = await axios.get(`https://apis-keith.vercel.app/search/soundcloud?q=${encodeURIComponent(query)}`, { timeout: 10000 });
         
         if (scSearch.data?.status && scSearch.data?.result?.result?.length > 0) {
           const track = scSearch.data.result.result[0];
@@ -128,7 +152,7 @@ adams(
           const artist = track.artist || "Unknown Artist";
 
           // Get download URL from SoundCloud
-          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`);
+          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`, { timeout: 10000 });
           
           if (scDownload.data?.result?.downloadUrl) {
             // Send the audio with newsletter context
@@ -137,10 +161,13 @@ adams(
               mimetype: "audio/mpeg",
               fileName: `${trackTitle.substring(0, 50)}.mp3`,
               contextInfo: {
+                mentionedJid: [ms.sender],
+                forwardingScore: 999,
+                isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: '120363285388090068@newsletter',
-                  newsletterName: "BWM-XMD Downloads",
-                  serverMessageId: Math.floor(Math.random() * 1000),
+                  newsletterName: "BWM-XMD",
+                  serverMessageId: 143,
                 },
                 externalAdReply: {
                   title: trackTitle,
@@ -156,19 +183,40 @@ adams(
 
             await zk.sendMessage(dest, audioPayload, { quoted: ms });
             
-            // Final smooth edit
-            await smoothEdit(waitMessage, "✅ Your audio is ready!");
+            // Final update
+            await zk.sendMessage(
+              dest, 
+              { 
+                text: "✅ Your audio is ready!",
+                edit: waitMessage.key 
+              },
+              {
+                disappearingMessagesInChat: true,
+                ephemeralExpiration: 24*60*60
+              }
+            );
             return;
           }
         }
       } catch (scError) {
         console.log("SoundCloud download failed, trying Spotify...");
-        await smoothEdit(waitMessage, "🔍 Trying final source...");
       }
 
       // 3. Try Spotify as last resort
       try {
-        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`);
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "🔍 Looking for your song...",
+            edit: waitMessage.key 
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
+
+        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`, { timeout: 10000 });
         
         if (spotifyResponse.data?.success) {
           // Send the audio with newsletter context
@@ -177,10 +225,13 @@ adams(
             mimetype: "audio/mpeg",
             fileName: `${spotifyResponse.data.result.title || query}.mp3`,
             contextInfo: {
+              mentionedJid: [ms.sender],
+              forwardingScore: 999,
+              isForwarded: true,
               forwardedNewsletterMessageInfo: {
                 newsletterJid: '120363285388090068@newsletter',
-                newsletterName: "BWM-XMD Downloads",
-                serverMessageId: Math.floor(Math.random() * 1000),
+                newsletterName: "BWM-XMD",
+                serverMessageId: 143,
               },
               externalAdReply: {
                 title: spotifyResponse.data.result.title || query,
@@ -196,8 +247,18 @@ adams(
 
           await zk.sendMessage(dest, audioPayload, { quoted: ms });
           
-          // Final smooth edit
-          await smoothEdit(waitMessage, "✅ Your audio is ready!");
+          // Final update
+          await zk.sendMessage(
+            dest, 
+            { 
+              text: "✅ Your audio is ready!",
+              edit: waitMessage.key 
+            },
+            {
+              disappearingMessagesInChat: true,
+              ephemeralExpiration: 24*60*60
+            }
+          );
           return;
         }
       } catch (spotifyError) {
@@ -205,56 +266,31 @@ adams(
       }
 
       // If all methods fail
-      await smoothEdit(waitMessage, "😢 Sorry, I couldn't get that song. Please try a different one.");
-
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "😢 Sorry, I couldn't get that song. Please try a different one.",
+          edit: waitMessage.key 
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     } catch (error) {
       console.error("Error during download process:", error.message);
-      try {
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: "😢 Sorry, I couldn't get that song. Please try a different one.",
-            edit: waitMessage?.key 
-          },
-          {
-            quoted: ms,
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 24*60*60
-          }
-        );
-      } catch (e) {
-        repondre("😢 Sorry, I couldn't get that song. Please try a different one.");
-      }
-    }
-
-    // Helper function for smooth message editing
-    async function smoothEdit(message, newText) {
-      try {
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: newText,
-            edit: message.key 
-          },
-          {
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 24*60*60
-          }
-        );
-      } catch (editError) {
-        console.log("Message edit failed, sending new message instead");
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: newText
-          },
-          {
-            quoted: ms,
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 24*60*60
-          }
-        );
-      }
+      
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "😢 Sorry, I couldn't get that song. Please try a different one." 
+        },
+        {
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     }
   }
 );
@@ -278,19 +314,10 @@ adams(
     let waitMessage = null;
 
     try {
-      // Send initial message with newsletter context
+      // Send initial message
       waitMessage = await zk.sendMessage(
         dest, 
-        { 
-          text: "🔍 Finding your video... Please wait",
-          contextInfo: {
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: '120363285388090068@newsletter',
-              newsletterName: "BWM-XMD Downloads",
-              serverMessageId: Math.floor(Math.random() * 1000),
-            }
-          }
-        }, 
+        { text: "🔍 Finding your video... Please wait" }, 
         { 
           quoted: ms,
           disappearingMessagesInChat: true,
@@ -301,7 +328,17 @@ adams(
       // Search for the video on YouTube
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
-        await smoothEdit(waitMessage, "No video found for your search.");
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "No video found for your search.",
+            edit: waitMessage.key 
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
         return;
       }
 
@@ -312,8 +349,18 @@ adams(
       const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Smooth edit for downloading status
-      await smoothEdit(waitMessage, "⬇️ Preparing your video...");
+      // Update message
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "⬇️ Preparing your video...",
+          edit: waitMessage.key 
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
 
       const apiKey = '_0x5aff35,_0x1876stqr';
       const encodedUrl = encodeURIComponent(videoUrl);
@@ -342,7 +389,17 @@ adams(
       }
 
       if (!downloadUrl) {
-        await smoothEdit(waitMessage, "Sorry, couldn't download the video. Please try again later.");
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "Sorry, couldn't download the video. Please try again later.",
+            edit: waitMessage.key 
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
         return;
       }
 
@@ -352,10 +409,13 @@ adams(
         mimetype: "video/mp4",
         caption: `🎥 *${videoTitle}*\n⏳ *Duration:* ${videoDuration}`,
         contextInfo: {
+          mentionedJid: [ms.sender],
+          forwardingScore: 999,
+          isForwarded: true,
           forwardedNewsletterMessageInfo: {
             newsletterJid: '120363285388090068@newsletter',
-            newsletterName: "BWM-XMD Downloads",
-            serverMessageId: Math.floor(Math.random() * 1000),
+            newsletterName: "BWM-XMD",
+            serverMessageId: 143,
           },
           externalAdReply: {
             title: videoTitle,
@@ -371,46 +431,33 @@ adams(
 
       await zk.sendMessage(dest, videoPayload, { quoted: ms });
       
-      // Final smooth edit
-      await smoothEdit(waitMessage, "✅ Your video is ready!");
-
+      // Final update
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "✅ Your video is ready!",
+          edit: waitMessage.key 
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     } catch (error) {
       console.error("Error during download process:", error.message);
-      try {
-        await smoothEdit(waitMessage, "Oops! Something went wrong. Please try again.");
-      } catch (e) {
-        repondre("Oops! Something went wrong. Please try again.");
-      }
-    }
-
-    // Helper function for smooth message editing
-    async function smoothEdit(message, newText) {
-      try {
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: newText,
-            edit: message.key 
-          },
-          {
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 24*60*60
-          }
-        );
-      } catch (editError) {
-        console.log("Message edit failed, sending new message instead");
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: newText
-          },
-          {
-            quoted: ms,
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 24*60*60
-          }
-        );
-      }
+      
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "Oops! Something went wrong. Please try again.",
+          edit: waitMessage?.key 
+        },
+        {
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     }
   }
 );
