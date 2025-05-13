@@ -65,34 +65,52 @@ adams(
           ];
 
           let downloadUrl = null;
-          let audioBuffer = null;
           
-          // Try each API until one works and we can verify the audio
+          // Try each API until one works
           for (const api of audioApis) {
             try {
-              const response = await axios.get(api, { responseType: 'arraybuffer' });
-              if (response.data) {
-                // Verify the audio file is valid
-                const buffer = Buffer.from(response.data);
-                if (buffer.length > 1024) { // Basic check for minimum file size
-                  downloadUrl = api;
-                  audioBuffer = buffer;
-                  break;
-                }
+              const response = await axios.get(api);
+              if (response.data?.result?.download_url || response.data?.url) {
+                downloadUrl = response.data.result?.download_url || response.data.url;
+                break;
               }
             } catch (e) {
               console.log(`API ${api} failed, trying next one...`);
             }
           }
 
-          if (audioBuffer) {
-            await sendAudio(
-              audioBuffer,
-              videoTitle,
-              videoDuration,
-              videoThumbnail,
-              videoUrl,
-              "YouTube"
+          if (downloadUrl) {
+            // Send the audio immediately without additional checks
+            const audioPayload = {
+              audio: { url: downloadUrl },
+              mimetype: "audio/mpeg",
+              fileName: `${videoTitle.substring(0, 50)}.mp3`,
+              contextInfo: {
+                externalAdReply: {
+                  title: videoTitle,
+                  body: `🎶 ${videoTitle}`,
+                  mediaType: 1,
+                  sourceUrl: videoUrl,
+                  thumbnailUrl: videoThumbnail,
+                  renderLargerThumbnail: true,
+                  showAdAttribution: true,
+                },
+              },
+            };
+
+            await zk.sendMessage(dest, audioPayload, { quoted: ms });
+            
+            // Edit the wait message to show completion
+            await zk.sendMessage(
+              dest, 
+              { 
+                text: "✅ Your audio is ready!",
+                edit: waitMessage.key 
+              },
+              {
+                disappearingMessagesInChat: true,
+                ephemeralExpiration: 24*60*60
+              }
             );
             return;
           }
@@ -122,33 +140,44 @@ adams(
           const track = scSearch.data.result.result[0];
           const trackUrl = track.url;
           const trackTitle = track.title || query;
-          const trackDuration = track.timestamp || "Unknown";
           const trackThumbnail = track.thumb || "https://files.catbox.moe/sd49da.jpg";
           const artist = track.artist || "Unknown Artist";
 
-          await zk.sendMessage(
-            dest, 
-            { 
-              text: "⬇️ Preparing your track...",
-              edit: waitMessage.key 
-            },
-            {
-              disappearingMessagesInChat: true,
-              ephemeralExpiration: 24*60*60
-            }
-          );
-
           // Get download URL from SoundCloud
-          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`, { responseType: 'arraybuffer' });
+          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`);
           
-          if (scDownload.data && scDownload.data.length > 1024) {
-            await sendAudio(
-              Buffer.from(scDownload.data),
-              `${trackTitle} - ${artist}`,
-              trackDuration,
-              trackThumbnail,
-              trackUrl,
-              "SoundCloud"
+          if (scDownload.data?.result?.downloadUrl) {
+            // Send the audio immediately without additional checks
+            const audioPayload = {
+              audio: { url: scDownload.data.result.downloadUrl },
+              mimetype: "audio/mpeg",
+              fileName: `${trackTitle.substring(0, 50)}.mp3`,
+              contextInfo: {
+                externalAdReply: {
+                  title: trackTitle,
+                  body: `🎶 ${trackTitle} - ${artist}`,
+                  mediaType: 1,
+                  sourceUrl: trackUrl,
+                  thumbnailUrl: trackThumbnail,
+                  renderLargerThumbnail: true,
+                  showAdAttribution: true,
+                },
+              },
+            };
+
+            await zk.sendMessage(dest, audioPayload, { quoted: ms });
+            
+            // Edit the wait message to show completion
+            await zk.sendMessage(
+              dest, 
+              { 
+                text: "✅ Your audio is ready!",
+                edit: waitMessage.key 
+              },
+              {
+                disappearingMessagesInChat: true,
+                ephemeralExpiration: 24*60*60
+              }
             );
             return;
           }
@@ -171,16 +200,40 @@ adams(
           }
         );
 
-        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`, { responseType: 'arraybuffer' });
+        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`);
         
-        if (spotifyResponse.data && spotifyResponse.data.length > 1024) {
-          await sendAudio(
-            Buffer.from(spotifyResponse.data),
-            query,
-            "Unknown",
-            "https://files.catbox.moe/sd49da.jpg",
-            `https://open.spotify.com/search/${encodeURIComponent(query)}`,
-            "Spotify"
+        if (spotifyResponse.data?.success) {
+          // Send the audio immediately without additional checks
+          const audioPayload = {
+            audio: { url: spotifyResponse.data.result.downloadLink },
+            mimetype: "audio/mpeg",
+            fileName: `${spotifyResponse.data.result.title || query}.mp3`,
+            contextInfo: {
+              externalAdReply: {
+                title: spotifyResponse.data.result.title || query,
+                body: `🎶 From Spotify`,
+                mediaType: 1,
+                sourceUrl: `https://open.spotify.com/search/${encodeURIComponent(query)}`,
+                thumbnailUrl: "https://files.catbox.moe/sd49da.jpg",
+                renderLargerThumbnail: true,
+                showAdAttribution: true,
+              },
+            },
+          };
+
+          await zk.sendMessage(dest, audioPayload, { quoted: ms });
+          
+          // Edit the wait message to show completion
+          await zk.sendMessage(
+            dest, 
+            { 
+              text: "✅ Your audio is ready!",
+              edit: waitMessage.key 
+            },
+            {
+              disappearingMessagesInChat: true,
+              ephemeralExpiration: 24*60*60
+            }
           );
           return;
         }
@@ -189,8 +242,17 @@ adams(
       }
 
       // If all methods fail
-      throw new Error("Couldn't find the song");
-
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "😢 Sorry, I couldn't get that song. Please try a different one.",
+          edit: waitMessage.key 
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     } catch (error) {
       console.error("Error during download process:", error.message);
       
@@ -205,68 +267,6 @@ adams(
           ephemeralExpiration: 24*60*60
         }
       );
-    }
-
-    async function sendAudio(buffer, title, duration, thumbnail, sourceUrl, source) {
-      title = title || "Unknown Track";
-      duration = duration || "Unknown";
-      thumbnail = thumbnail || "https://files.catbox.moe/sd49da.jpg";
-      sourceUrl = sourceUrl || "https://example.com";
-
-      const downloadingMessage = {
-        text: `
-=========================
- *BWM XMD DOWNLOADER*
-=========================
- *Source :* ${source}
-=========================
- *Title :* ${title}
- *Duration :* ${duration}
-=========================
-
-> © Sir Ibrahim Adams
-        `,
-        contextInfo: {
-          mentionedJid: [ms.sender],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363285388090068@newsletter',
-            newsletterName: "BWM-XMD",
-            serverMessageId: 143,
-          },
-          externalAdReply: {
-            title: title,
-            body: `From ${source}`,
-            mediaType: 1,
-            thumbnailUrl: thumbnail,
-            sourceUrl: sourceUrl,
-            renderLargerThumbnail: false,
-            showAdAttribution: true,
-          },
-        },
-      };
-
-      await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
-
-      const audioPayload = {
-        audio: buffer,
-        mimetype: "audio/mpeg",
-        fileName: `${title.substring(0, 50)}.mp3`,
-        contextInfo: {
-          externalAdReply: {
-            title: title,
-            body: `🎶 ${title}`,
-            mediaType: 1,
-            sourceUrl: sourceUrl,
-            thumbnailUrl: thumbnail,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
-        },
-      };
-
-      await zk.sendMessage(dest, audioPayload, { quoted: ms });
     }
   }
 );
@@ -290,10 +290,32 @@ adams(
     let waitMessage = null;
 
     try {
+      // Send initial message
+      waitMessage = await zk.sendMessage(
+        dest, 
+        { text: "🔍 Finding your video... Please wait" }, 
+        { 
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
+
       // Search for the video on YouTube
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
-        return repondre("No video found for your search.");
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "No video found for your search.",
+            edit: waitMessage.key 
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
+        return;
       }
 
       const firstVideo = searchResults.videos[0];
@@ -303,15 +325,16 @@ adams(
       const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Send initial message
-      waitMessage = await zk.sendMessage(
+      await zk.sendMessage(
         dest, 
         { 
-          text: "📥 Getting your video ready...",
+          text: "⬇️ Preparing your video...",
+          edit: waitMessage.key 
+        },
+        {
           disappearingMessagesInChat: true,
           ephemeralExpiration: 24*60*60
-        },
-        { quoted: ms }
+        }
       );
 
       const apiKey = '_0x5aff35,_0x1876stqr';
@@ -344,38 +367,16 @@ adams(
         await zk.sendMessage(
           dest, 
           { 
-            text: "😢 Sorry, couldn't download the video. Please try again later.",
+            text: "Sorry, couldn't download the video. Please try again later.",
             edit: waitMessage.key 
           },
-          { quoted: ms }
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
         );
         return;
       }
-
-      // Update wait message with download info
-      await zk.sendMessage(
-        dest, 
-        { 
-          text: `
-=========================
- *BWM XMD DOWNLOADER*
-=========================
- *Title :* ${videoTitle}
- *Duration :* ${videoDuration}
- *Views :* ${videoViews}
-=========================
-
-⬇️ Downloading your video...
-> © Sir Ibrahim Adams
-          `,
-          edit: waitMessage.key 
-        },
-        {
-          quoted: ms,
-          disappearingMessagesInChat: true,
-          ephemeralExpiration: 24*60*60
-        }
-      );
 
       // Send the video file
       const videoPayload = {
@@ -386,7 +387,7 @@ adams(
           externalAdReply: {
             title: videoTitle,
             body: `🎥 ${videoTitle}`,
-            mediaType: 2,
+            mediaType: 1,
             sourceUrl: videoUrl,
             thumbnailUrl: videoThumbnail,
             renderLargerThumbnail: true,
@@ -396,20 +397,34 @@ adams(
       };
 
       await zk.sendMessage(dest, videoPayload, { quoted: ms });
+      
+      // Edit the wait message to show completion
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "✅ Your video is ready!",
+          edit: waitMessage.key 
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     } catch (error) {
       console.error("Error during download process:", error.message);
-      if (waitMessage) {
-        await zk.sendMessage(
-          dest, 
-          { 
-            text: "Oops! Something went wrong. Please try again.",
-            edit: waitMessage.key 
-          },
-          { quoted: ms }
-        );
-      } else {
-        return repondre("Oops! Something went wrong. Please try again.");
-      }
+      
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: "Oops! Something went wrong. Please try again.",
+          edit: waitMessage?.key 
+        },
+        {
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
     }
   }
 );
