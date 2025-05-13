@@ -331,11 +331,15 @@ adams(
       };
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
-      // Send wait message
+      // Send wait message (updated to be editable)
       const waitMessage = await zk.sendMessage(
         dest, 
         { text: "📥 Just a moment, your video is coming..." }, 
-        { quoted: ms }
+        { 
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
       );
 
       const apiKey = '_0x5aff35,_0x1876stqr';
@@ -365,11 +369,33 @@ adams(
       }
 
       if (!downloadUrl) {
-        return repondre("Sorry, couldn't download the video. Please try again later.");
+        // Edit wait message to show error
+        await zk.sendMessage(
+          dest,
+          {
+            text: "❌ Sorry, couldn't download the video. Please try again later.",
+            edit: waitMessage.key
+          },
+          {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 24*60*60
+          }
+        );
+        return;
       }
 
-      // Delete the wait message
-      await zk.sendMessage(dest, { delete: waitMessage.key });
+      // Edit wait message to show success before sending video
+      await zk.sendMessage(
+        dest,
+        {
+          text: "✅ Your video is ready!",
+          edit: waitMessage.key
+        },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
 
       // Send the video file
       const videoPayload = {
