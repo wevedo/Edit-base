@@ -65,23 +65,29 @@ adams(
           ];
 
           let downloadUrl = null;
+          let audioBuffer = null;
           
-          // Try each API until one works
+          // Try each API until one works and we can verify the audio
           for (const api of audioApis) {
             try {
-              const response = await axios.get(api);
-              if (response.data?.result?.download_url || response.data?.url) {
-                downloadUrl = response.data.result?.download_url || response.data.url;
-                break;
+              const response = await axios.get(api, { responseType: 'arraybuffer' });
+              if (response.data) {
+                // Verify the audio file is valid
+                const buffer = Buffer.from(response.data);
+                if (buffer.length > 1024) { // Basic check for minimum file size
+                  downloadUrl = api;
+                  audioBuffer = buffer;
+                  break;
+                }
               }
             } catch (e) {
               console.log(`API ${api} failed, trying next one...`);
             }
           }
 
-          if (downloadUrl) {
+          if (audioBuffer) {
             await sendAudio(
-              downloadUrl,
+              audioBuffer,
               videoTitle,
               videoDuration,
               videoThumbnail,
@@ -133,11 +139,11 @@ adams(
           );
 
           // Get download URL from SoundCloud
-          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`);
+          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`, { responseType: 'arraybuffer' });
           
-          if (scDownload.data?.result?.downloadUrl) {
+          if (scDownload.data && scDownload.data.length > 1024) {
             await sendAudio(
-              scDownload.data.result.downloadUrl,
+              Buffer.from(scDownload.data),
               `${trackTitle} - ${artist}`,
               trackDuration,
               trackThumbnail,
@@ -165,12 +171,12 @@ adams(
           }
         );
 
-        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`);
+        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`, { responseType: 'arraybuffer' });
         
-        if (spotifyResponse.data?.success) {
+        if (spotifyResponse.data && spotifyResponse.data.length > 1024) {
           await sendAudio(
-            spotifyResponse.data.result.downloadLink,
-            spotifyResponse.data.result.title || query,
+            Buffer.from(spotifyResponse.data),
+            query,
             "Unknown",
             "https://files.catbox.moe/sd49da.jpg",
             `https://open.spotify.com/search/${encodeURIComponent(query)}`,
@@ -201,7 +207,7 @@ adams(
       );
     }
 
-    async function sendAudio(url, title, duration, thumbnail, sourceUrl, source) {
+    async function sendAudio(buffer, title, duration, thumbnail, sourceUrl, source) {
       title = title || "Unknown Track";
       duration = duration || "Unknown";
       thumbnail = thumbnail || "https://files.catbox.moe/sd49da.jpg";
@@ -244,7 +250,7 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       const audioPayload = {
-        audio: { url },
+        audio: buffer,
         mimetype: "audio/mpeg",
         fileName: `${title.substring(0, 50)}.mp3`,
         contextInfo: {
@@ -281,6 +287,7 @@ adams(
     }
 
     const query = arg.join(" ");
+    let waitMessage = null;
 
     try {
       // Search for the video on YouTube
@@ -296,46 +303,14 @@ adams(
       const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Format the downloading message
-      const downloadingMessage = {
-        text: `
-=========================
- *BWM XMD DOWNLOADER*
-=========================
-=========================
- *Title :* ${videoTitle}
- *Duration :* ${videoDuration}
- *Views :* ${videoViews}
-=========================
-
-> © Sir Ibrahim Adams
-        `,
-        contextInfo: {
-          mentionedJid: [ms.sender],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363285388090068@newsletter',
-            newsletterName: "BWM-XMD",
-            serverMessageId: 143,
-          },
-          externalAdReply: {
-            title: videoTitle,
-            body: "BWM XMD Downloader",
-            mediaType: 1,
-            thumbnailUrl: "https://files.catbox.moe/sd49da.jpg",
-            sourceUrl: videoUrl,
-            renderLargerThumbnail: false,
-            showAdAttribution: true,
-          },
-        },
-      };
-      await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
-
-      // Send wait message
-      const waitMessage = await zk.sendMessage(
+      // Send initial message
+      waitMessage = await zk.sendMessage(
         dest, 
-        { text: "📥 Just a moment, your video is coming..." }, 
+        { 
+          text: "📥 Getting your video ready...",
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        },
         { quoted: ms }
       );
 
@@ -366,11 +341,41 @@ adams(
       }
 
       if (!downloadUrl) {
-        return repondre("Sorry, couldn't download the video. Please try again later.");
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "😢 Sorry, couldn't download the video. Please try again later.",
+            edit: waitMessage.key 
+          },
+          { quoted: ms }
+        );
+        return;
       }
 
-      // Delete the wait message
-      await zk.sendMessage(dest, { delete: waitMessage.key });
+      // Update wait message with download info
+      await zk.sendMessage(
+        dest, 
+        { 
+          text: `
+=========================
+ *BWM XMD DOWNLOADER*
+=========================
+ *Title :* ${videoTitle}
+ *Duration :* ${videoDuration}
+ *Views :* ${videoViews}
+=========================
+
+⬇️ Downloading your video...
+> © Sir Ibrahim Adams
+          `,
+          edit: waitMessage.key 
+        },
+        {
+          quoted: ms,
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 24*60*60
+        }
+      );
 
       // Send the video file
       const videoPayload = {
@@ -381,7 +386,7 @@ adams(
           externalAdReply: {
             title: videoTitle,
             body: `🎥 ${videoTitle}`,
-            mediaType: 1,
+            mediaType: 2,
             sourceUrl: videoUrl,
             thumbnailUrl: videoThumbnail,
             renderLargerThumbnail: true,
@@ -393,7 +398,18 @@ adams(
       await zk.sendMessage(dest, videoPayload, { quoted: ms });
     } catch (error) {
       console.error("Error during download process:", error.message);
-      return repondre("Oops! Something went wrong. Please try again.");
+      if (waitMessage) {
+        await zk.sendMessage(
+          dest, 
+          { 
+            text: "Oops! Something went wrong. Please try again.",
+            edit: waitMessage.key 
+          },
+          { quoted: ms }
+        );
+      } else {
+        return repondre("Oops! Something went wrong. Please try again.");
+      }
     }
   }
 );
