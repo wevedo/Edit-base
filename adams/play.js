@@ -42,7 +42,6 @@ adams(
           const videoDuration = video.timestamp || "Unknown";
           const videoThumbnail = video.thumbnail || "https://files.catbox.moe/sd49da.jpg";
 
-          // Update message smoothly
           await zk.sendMessage(
             dest, 
             { 
@@ -69,7 +68,7 @@ adams(
           // Try each API until one works
           for (const api of audioApis) {
             try {
-              const response = await axios.get(api, { timeout: 10000 });
+              const response = await axios.get(api);
               if (response.data?.result?.download_url || response.data?.url) {
                 downloadUrl = response.data.result?.download_url || response.data.url;
                 break;
@@ -80,7 +79,7 @@ adams(
           }
 
           if (downloadUrl) {
-            // Send the audio with newsletter context
+            // Send the audio immediately without additional checks
             const audioPayload = {
               audio: { url: downloadUrl },
               mimetype: "audio/mpeg",
@@ -108,7 +107,7 @@ adams(
 
             await zk.sendMessage(dest, audioPayload, { quoted: ms });
             
-            // Final update
+            // Edit the wait message to show completion
             await zk.sendMessage(
               dest, 
               { 
@@ -142,7 +141,7 @@ adams(
         );
 
         // Search SoundCloud
-        const scSearch = await axios.get(`https://apis-keith.vercel.app/search/soundcloud?q=${encodeURIComponent(query)}`, { timeout: 10000 });
+        const scSearch = await axios.get(`https://apis-keith.vercel.app/search/soundcloud?q=${encodeURIComponent(query)}`);
         
         if (scSearch.data?.status && scSearch.data?.result?.result?.length > 0) {
           const track = scSearch.data.result.result[0];
@@ -152,23 +151,15 @@ adams(
           const artist = track.artist || "Unknown Artist";
 
           // Get download URL from SoundCloud
-          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`, { timeout: 10000 });
+          const scDownload = await axios.get(`https://apis-keith.vercel.app/download/soundcloud?url=${encodeURIComponent(trackUrl)}`);
           
           if (scDownload.data?.result?.downloadUrl) {
-            // Send the audio with newsletter context
+            // Send the audio immediately without additional checks
             const audioPayload = {
               audio: { url: scDownload.data.result.downloadUrl },
               mimetype: "audio/mpeg",
               fileName: `${trackTitle.substring(0, 50)}.mp3`,
               contextInfo: {
-                mentionedJid: [ms.sender],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                  newsletterJid: '120363285388090068@newsletter',
-                  newsletterName: "BWM-XMD",
-                  serverMessageId: 143,
-                },
                 externalAdReply: {
                   title: trackTitle,
                   body: `🎶 ${trackTitle} - ${artist}`,
@@ -183,7 +174,7 @@ adams(
 
             await zk.sendMessage(dest, audioPayload, { quoted: ms });
             
-            // Final update
+            // Edit the wait message to show completion
             await zk.sendMessage(
               dest, 
               { 
@@ -216,23 +207,15 @@ adams(
           }
         );
 
-        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`, { timeout: 10000 });
+        const spotifyResponse = await axios.get(`https://api.dreaded.site/api/spotifydl?title=${encodeURIComponent(query)}`);
         
         if (spotifyResponse.data?.success) {
-          // Send the audio with newsletter context
+          // Send the audio immediately without additional checks
           const audioPayload = {
             audio: { url: spotifyResponse.data.result.downloadLink },
             mimetype: "audio/mpeg",
             fileName: `${spotifyResponse.data.result.title || query}.mp3`,
             contextInfo: {
-              mentionedJid: [ms.sender],
-              forwardingScore: 999,
-              isForwarded: true,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363285388090068@newsletter',
-                newsletterName: "BWM-XMD",
-                serverMessageId: 143,
-              },
               externalAdReply: {
                 title: spotifyResponse.data.result.title || query,
                 body: `🎶 From Spotify`,
@@ -247,7 +230,7 @@ adams(
 
           await zk.sendMessage(dest, audioPayload, { quoted: ms });
           
-          // Final update
+          // Edit the wait message to show completion
           await zk.sendMessage(
             dest, 
             { 
@@ -349,7 +332,6 @@ adams(
       const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Update message
       await zk.sendMessage(
         dest, 
         { 
@@ -378,7 +360,7 @@ adams(
       // Try each API until one works
       for (const api of videoApis) {
         try {
-          const response = await axios.get(api, { timeout: 10000 });
+          const response = await axios.get(api);
           if (response.data?.result?.download_url || response.data?.url) {
             downloadUrl = response.data.result?.download_url || response.data.url;
             break;
@@ -403,7 +385,7 @@ adams(
         return;
       }
 
-      // Send the video with newsletter context
+      // Send the video file
       const videoPayload = {
         video: { url: downloadUrl },
         mimetype: "video/mp4",
@@ -431,7 +413,7 @@ adams(
 
       await zk.sendMessage(dest, videoPayload, { quoted: ms });
       
-      // Final update
+      // Edit the wait message to show completion
       await zk.sendMessage(
         dest, 
         { 
