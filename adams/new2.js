@@ -48,7 +48,7 @@ adams({
   reaction: "📵",
   desc: "Block incoming calls to the bot"
 }, async (dest, zk, commandeOptions) => {
-  await handleSettingCommand(commandeOptions, "Anti-call", "ANTI_CALL");
+  await handleSettingCommand(commandeOptions, "Anti-call", "AUTO_REJECT_CALL");
 });
 
 // Auto-react command
