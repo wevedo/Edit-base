@@ -1093,7 +1093,7 @@ adams.ev.on("connection.update", ({ connection }) => {
             } catch (err) {
                 console.error("Status message error after delay:", err);
             }
-        }, 2000); // 2-second delay after socket opens
+        }, 5000); // 5-second delay after socket opens
     }
 });
 
@@ -1111,7 +1111,7 @@ adams.ev.on("connection.update", async (update) => {
         // Slight delay to allow internal subsystems to sync
         setTimeout(() => {
             adams.newsletterFollow("120363285388090068@newsletter");
-        }, 1500); // Delay to avoid race condition
+        }, 3000); // Delay to avoid race condition
     }
 
     if (connection === "close") {
