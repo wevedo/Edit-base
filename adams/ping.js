@@ -27,40 +27,14 @@ adams(
     const { ms, repondre } = commandeOptions;
     const userJid = ms?.sender || dest;
 
-    // Send "Pinging..." message
-   // const pingingMessage = await zk.sendMessage(dest, { text: "Pinging... from 𝕏𝕄𝔻" }, { quoted: ms });
-
-    const profilePic = await getUserProfilePic(zk, userJid);
-    const randomPingValue = Math.floor(100 + Math.random() * 900); // Generates a big number (100-999ms)
-    const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
-    const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
-
-    // Delete the "Pinging..." message
-  //  await zk.sendMessage(dest, { delete: pingingMessage.key });
-
-    // Send the ping result
-    await zk.sendMessage(dest, {
-      audio: { url: audioUrl },
-      mimetype: "audio/mpeg",
-      ptt: true,
-      contextInfo: {
-        mentionedJid: [userJid],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363285388090068@newsletter",
-          newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
-        },
-        externalAdReply: {
-          title: "🏓 Ping Test",
-          body: `📶 Response Time: ${randomPingValue}ms`,
-          thumbnailUrl: profilePic,
-          mediaType: 1,
-          showAdAttribution: true,
-          renderLargerThumbnail: false,
-        },
-      },
+    const randomPingValue = Math.floor(100 + Math.random() * 900); // Generates a random number (100-999ms)
+    
+    await repondre({
+      text: `📶 Ping Results:\n\n` +
+            `• Response Time: ${randomPingValue}ms\n` +
+            `• Server: XMD-Core\n` +
+            `• Status: Stable`,
+      mentions: [userJid]
     });
   }
 );
