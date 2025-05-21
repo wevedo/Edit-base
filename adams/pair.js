@@ -9,17 +9,17 @@ const nomComList = ["rent", "code", "pair", "link"]; // Base commands
 nomComList.forEach((nomCom) => {
   // Register base command (without suffix)
   adams({ nomCom, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
-    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-xmd.onrender.com");
+    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-scanner-1.onrender.com/");
   });
 
   // Register command with suffix 1
   adams({ nomCom: `${nomCom}1`, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
-    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-xmd-9kig.onrender.com");
+    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-scanner-2.onrender.com/");
   });
 
   // Register command with suffix 2
   adams({ nomCom: `${nomCom}2`, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
-    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-scanner-s211.onrender.com");
+    await handleCodeRequest(dest, zk, commandeOptions, "https://bwm-xmd-scanner-3.onrender.com/");
   });
 });
 
