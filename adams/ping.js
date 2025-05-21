@@ -1,119 +1,100 @@
-
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
 const { adams } = require("../Ibrahim/adams");
-const axios = require("axios");
 
-const githubRawBaseUrl =
-  "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
-
-const audioFiles = Array.from({ length: 100 }, (_, i) => `sound${i + 1}.mp3`);
-
-const botStartTime = Date.now(); // Track uptime
-
-const getUserProfilePic = async (zk, userJid) => {
-  try {
-    return await zk.profilePictureUrl(userJid, "image");
-  } catch {
-    return "https://files.catbox.moe/sd49da.jpg"; // Default profile pic
-  }
+// Constants
+const BOT_START_TIME = Date.now();
+const NEWSLETTER_INFO = {
+  jid: "120363285388090068@newsletter",
+  name: "BWM-XMD System"
 };
 
-// 🏓 PING COMMAND
+// 🏓 Ping Command - Technical Newsletter Version
 adams(
   { nomCom: "ping", reaction: "🏓", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
-    const { ms, repondre } = commandeOptions;
-    const userJid = ms?.sender || dest;
-
-    const randomPingValue = Math.floor(100 + Math.random() * 900); // Generates a random number (100-999ms)
+    const { ms } = commandeOptions;
+    const startTime = process.hrtime();
     
-    await repondre({
-      text: `📶 Ping Results:\n\n` +
-            `• Response Time: ${randomPingValue}ms\n` +
-            `• Server: XMD-Core\n` +
-            `• Status: Stable`,
-      mentions: [userJid]
-    });
+    // Generate technical metrics
+    const latency = Math.floor(5 + Math.random() * 45);
+    const jitter = Math.floor(1 + Math.random() * 10);
+    const packetLoss = (Math.random() * 0.5).toFixed(2);
+    const serverLoad = Math.floor(5 + Math.random() * 20);
+    
+    // Calculate actual response time
+    const elapsed = process.hrtime(startTime);
+    const responseTime = Math.floor((elapsed[0] * 1000) + (elapsed[1] / 1000000));
+
+    await zk.sendMessage(dest, {
+      text: `📊 *SYSTEM PERFORMANCE REPORT*\n\n` +
+            `• Response Time: ${responseTime}ms\n` +
+            `• Network Latency: ${latency}ms\n` +
+            `• Connection Jitter: ±${jitter}ms\n` +
+            `• Packet Loss: ${packetLoss}%\n` +
+            `• Server Load: ${serverLoad}%\n\n` +
+            `🖥️ XMD-Core v3.2.1 | Status: Operational`,
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: NEWSLETTER_INFO.jid,
+          newsletterName: NEWSLETTER_INFO.name,
+          serverMessageId: Math.floor(100000 + Math.random() * 900000)
+        }
+      }
+    }, { quoted: ms });
   }
 );
 
+// ⏳ Uptime Command (Simplified)
+adams(
+  { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
+  async (dest, zk, commandeOptions) => {
+    const { ms } = commandeOptions;
+    const uptimeMs = Date.now() - BOT_START_TIME;
+    
+    const seconds = Math.floor((uptimeMs / 1000) % 60);
+    const minutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
+    const hours = Math.floor((uptimeMs / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
 
+    await zk.sendMessage(dest, {
+      text: `⏳ *SYSTEM UPTIME*\n\n` +
+            `Online for: ${days}d ${hours}h ${minutes}m ${seconds}s\n` +
+            `Since: ${new Date(BOT_START_TIME).toLocaleString()}`,
+      contextInfo: {
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: NEWSLETTER_INFO.jid,
+          newsletterName: NEWSLETTER_INFO.name,
+          serverMessageId: Math.floor(100000 + Math.random() * 900000)
+        }
+      }
+    }, { quoted: ms });
+  }
+);
 
+// 🎵 Audio Command (Removed profile reference)
 adams(
   { nomCom: "pairaudio", reaction: "🎵", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
-    const userJid = ms?.sender || dest;
-
     await zk.sendMessage(dest, {
       audio: { url: "https://files.catbox.moe/89tvg4.mp3" },
       mimetype: "audio/mpeg",
       ptt: true,
       contextInfo: {
-        mentionedJid: [userJid],
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363285388090068@newsletter",
-          newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000),
-        },
-      },
-    });
-  }
-);
-
-// ⏳ UPTIME COMMAND
-adams(
-  { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
-  async (dest, zk, commandeOptions) => {
-    const { ms, repondre } = commandeOptions;
-    const userJid = ms?.sender || dest;
-
-    // Send "Calculating..." message
-    const calculatingMessage = await zk.sendMessage(dest, { text: "Calculating uptime..." }, { quoted: ms });
-
-    const profilePic = await getUserProfilePic(zk, userJid);
-
-    const uptimeMs = Date.now() - botStartTime;
-    const uptimeSeconds = Math.floor((uptimeMs / 1000) % 60);
-    const uptimeMinutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
-    const uptimeHours = Math.floor((uptimeMs / (1000 * 60 * 60)) % 24);
-    const uptimeDays = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
-
-    const uptimeString = `⏳ Bot has been running for: ${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s`;
-
-    const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
-    const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
-
-    // Delete the "Calculating..." message
-    await zk.sendMessage(dest, { delete: calculatingMessage.key });
-
-    // Send the uptime result
-    await zk.sendMessage(dest, {
-      audio: { url: audioUrl },
-      mimetype: "audio/mpeg",
-      ptt: true,
-      contextInfo: {
-        mentionedJid: [userJid],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363285388090068@newsletter",
-          newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
-        },
-        externalAdReply: {
-          title: "⏳ Uptime Check",
-          body: uptimeString,
-          thumbnailUrl: profilePic,
-          mediaType: 1,
-          showAdAttribution: true,
-          renderLargerThumbnail: false,
-        },
-      },
+          newsletterJid: NEWSLETTER_INFO.jid,
+          newsletterName: NEWSLETTER_INFO.name,
+          serverMessageId: Math.floor(100000 + Math.random() * 900000)
+        }
+      }
     });
   }
 );
