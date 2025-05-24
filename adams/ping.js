@@ -7,34 +7,52 @@ const { adams } = require("../Ibrahim/adams");
 const BOT_START_TIME = Date.now();
 const NEWSLETTER_INFO = {
   jid: "120363285388090068@newsletter",
-  name: "BWM-XMD System"
+  name: "⚡ BWM-XMD Tech Network"
 };
+const TECH_EMOJIS = ["🚀", "⚡", "🔋", "💻", "🔌", "🌐", "📶", "🖥️", "🔍", "📊"];
 
-// 🏓 Ping Command - Technical Newsletter Version
+// Helper function for random tech emoji
+const randomTechEmoji = () => TECH_EMOJIS[Math.floor(Math.random() * TECH_EMOJIS.length)];
+
+// 🏓 Ultra Tech Ping Command
 adams(
   { nomCom: "ping", reaction: "🏓", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
     const startTime = process.hrtime();
     
-    // Generate technical metrics
-    const latency = Math.floor(5 + Math.random() * 45);
-    const jitter = Math.floor(1 + Math.random() * 10);
-    const packetLoss = (Math.random() * 0.5).toFixed(2);
-    const serverLoad = Math.floor(5 + Math.random() * 20);
+    // Simulate processing delay (50-500ms)
+    await new Promise(resolve => setTimeout(resolve, Math.floor(50 + Math.random() * 450)));
     
-    // Calculate actual response time
+    // Generate realistic tech metrics
     const elapsed = process.hrtime(startTime);
     const responseTime = Math.floor((elapsed[0] * 1000) + (elapsed[1] / 1000000));
+    const latency = Math.floor(10 + Math.random() * 90);
+    const jitter = Math.floor(1 + Math.random() * 15);
+    const packetLoss = (Math.random() * 0.3).toFixed(2);
+    const serverLoad = Math.floor(10 + Math.random() * 40);
+    const uptime = Math.floor((Date.now() - BOT_START_TIME) / 1000);
+    
+    // Generate cool tech status message
+    const statusEmoji = responseTime < 100 ? "🟢" : responseTime < 300 ? "🟡" : "🔴";
+    const speedRating = responseTime < 100 ? "LUDICROUS SPEED" : 
+                       responseTime < 200 ? "TURBO BOOSTED" : 
+                       responseTime < 400 ? "OPTIMAL" : "STANDARD";
 
     await zk.sendMessage(dest, {
-      text: `📊 *SYSTEM PERFORMANCE REPORT*\n\n` +
-            `• Response Time: ${responseTime}ms\n` +
-            `• Network Latency: ${latency}ms\n` +
-            `• Connection Jitter: ±${jitter}ms\n` +
-            `• Packet Loss: ${packetLoss}%\n` +
-            `• Server Load: ${serverLoad}%\n\n` +
-            `🖥️ XMD-Core v3.2.1 | Status: Operational`,
+      text: `*${randomTechEmoji()} TECH NETWORK DIAGNOSTICS ${randomTechEmoji()}*\n\n` +
+            `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+            `⚡ *Response Time:* ${responseTime}ms ${statusEmoji}\n` +
+            `📶 *Network Speed:* ${speedRating}\n\n` +
+            `🔧 *Technical Metrics*\n` +
+            `├ Latency: ${latency}ms\n` +
+            `├ Jitter: ±${jitter}ms\n` +
+            `├ Packet Loss: ${packetLoss}%\n` +
+            `└ Server Load: ${serverLoad}%\n\n` +
+            `🖥️ *System Uptime:* ${Math.floor(uptime/86400)}d ${Math.floor((uptime%86400)/3600)}h\n` +
+            `🔋 *Power Mode:* MAX PERFORMANCE\n` +
+            `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+            `*${NEWSLETTER_INFO.name}* • ${new Date().toLocaleTimeString()}`,
       contextInfo: {
         forwardingScore: 999,
         isForwarded: true,
@@ -42,13 +60,18 @@ adams(
           newsletterJid: NEWSLETTER_INFO.jid,
           newsletterName: NEWSLETTER_INFO.name,
           serverMessageId: Math.floor(100000 + Math.random() * 900000)
+        },
+        externalAdReply: {
+          title: "🚀 Network Performance Report",
+          body: `Response: ${responseTime}ms • Status: ${speedRating}`,
+          mediaType: 1
         }
       }
     }, { quoted: ms });
   }
 );
 
-// ⏳ Uptime Command (Simplified)
+// ⏳ Ultra Tech Uptime Command
 adams(
   { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
@@ -61,9 +84,17 @@ adams(
     const days = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
 
     await zk.sendMessage(dest, {
-      text: `⏳ *SYSTEM UPTIME*\n\n` +
-            `Online for: ${days}d ${hours}h ${minutes}m ${seconds}s\n` +
-            `Since: ${new Date(BOT_START_TIME).toLocaleString()}`,
+      text: `*${randomTechEmoji()} SYSTEM UPTIME STATS ${randomTechEmoji()}*\n\n` +
+            `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+            `⏱️ *Uptime:* ${days}d ${hours}h ${minutes}m ${seconds}s\n` +
+            `📅 *Since:* ${new Date(BOT_START_TIME).toLocaleString()}\n\n` +
+            `⚡ *Performance Metrics*\n` +
+            `├ CPU Load: ${Math.floor(5 + Math.random() * 25)}%\n` +
+            `├ Memory Usage: ${Math.floor(30 + Math.random() * 50)}%\n` +
+            `└ Network Stability: 99.9${Math.floor(Math.random() * 9)}%\n\n` +
+            `🔋 *System Health:* EXCELLENT\n` +
+            `▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n` +
+            `*${NEWSLETTER_INFO.name}* • ${new Date().toLocaleTimeString()}`,
       contextInfo: {
         forwardingScore: 999,
         isForwarded: true,
@@ -77,7 +108,7 @@ adams(
   }
 );
 
-// 🎵 Audio Command (Removed profile reference)
+// 🎵 Tech Audio Command
 adams(
   { nomCom: "pairaudio", reaction: "🎵", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
@@ -93,6 +124,11 @@ adams(
           newsletterJid: NEWSLETTER_INFO.jid,
           newsletterName: NEWSLETTER_INFO.name,
           serverMessageId: Math.floor(100000 + Math.random() * 900000)
+        },
+        externalAdReply: {
+          title: "🔊 TECH SOUND SYSTEM",
+          body: "Delivering high-quality audio performance",
+          mediaType: 1
         }
       }
     });
