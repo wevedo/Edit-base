@@ -135,7 +135,7 @@ adams(
         },
         externalAdReply: {
           title: "🔊 GLOBAL SOUND SYSTEM",
-          body: `Streaming Worldwide • ${getLocalTime()}`,
+          body: `Streaming Worldwide • ${getSystemTime()}`,
           mediaType: 1
         }
       }
