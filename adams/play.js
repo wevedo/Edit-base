@@ -342,7 +342,7 @@ adams(
         }
       );
 
-      const apiKey = '_0x5aff35,_0x1876stqr';
+      const apiKey = 'gifted_api_6kuv56877d';
       const encodedUrl = encodeURIComponent(videoUrl);
       
       const videoApis = [
