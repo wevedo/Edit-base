@@ -1,24 +1,16 @@
 const { adams } = require("../Ibrahim/adams");
-const axios = require("axios");
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const fs = require("fs-extra");
 const path = require("path");
-const { initializeApp } = require("firebase/app");
-const { getStorage, ref, uploadBytes, getDownloadURL } = require("firebase/storage");
+const cloudinary = require('cloudinary').v2;
 
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyBDNQxANWDVodCmT1ReuZwOJ4JQQr0fAIQ",
-  authDomain: "bwmxmd-1a970.firebaseapp.com",
-  projectId: "bwmxmd-1a970",
-  storageBucket: "bwmxmd-1a970.appspot.com", // Changed from firebasestorage.app to appspot.com
-  messagingSenderId: "139206447481",
-  appId: "1:139206447481:web:ac33952baa493eed3e5fa8",
-  measurementId: "G-Z32L9ZJ7JB"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const storage = getStorage(firebaseApp);
+// Configure Cloudinary
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dptzpfgtm',
+  api_key: process.env.CLOUDINARY_API_KEY || '247319227263335',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'OzNSWLPujncaia9d_XG9sWtMkxo',
+  secure: true
+});
 
 // Utility function to download media
 async function downloadMedia(mediaMessage, mediaType) {
@@ -43,41 +35,18 @@ async function streamToBuffer(stream) {
     });
 }
 
-// Upload file to Firebase Storage
-async function uploadToFirebase(filePath, mediaType) {
-    if (!fs.existsSync(filePath)) {
-        throw new Error("File does not exist");
-    }
-
+// Upload file to Cloudinary
+async function uploadToCloudinary(filePath, mediaType) {
     try {
-        const fileBuffer = await fs.readFile(filePath);
-        const fileName = path.basename(filePath);
-        const storageRef = ref(storage, `uploads/${fileName}`);
-        
-        // Upload the file
-        const snapshot = await uploadBytes(storageRef, fileBuffer, {
-            contentType: mediaType === "audio" ? "audio/mpeg" : getMimeType(filePath)
-        });
-        
-        // Get the download URL
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        return downloadURL;
-    } catch (err) {
-        throw new Error("Firebase Upload Error: " + err.message);
-    }
-}
+        const options = {
+            resource_type: mediaType === "video" ? "video" : "auto",
+            folder: "whatsapp_uploads"
+        };
 
-// Helper function to get MIME type
-function getMimeType(filePath) {
-    const ext = path.extname(filePath).toLowerCase();
-    switch (ext) {
-        case '.jpg': case '.jpeg': return 'image/jpeg';
-        case '.png': return 'image/png';
-        case '.gif': return 'image/gif';
-        case '.mp4': return 'video/mp4';
-        case '.mp3': return 'audio/mpeg';
-        case '.pdf': return 'application/pdf';
-        default: return 'application/octet-stream';
+        const result = await cloudinary.uploader.upload(filePath, options);
+        return result.secure_url; // Returns HTTPS URL
+    } catch (err) {
+        throw new Error("Cloudinary Upload Error: " + err.message);
     }
 }
 
@@ -120,25 +89,25 @@ adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineM
         }
 
         // Upload and get URL
-        const firebaseUrl = await uploadToFirebase(mediaPath, mediaType);
+        const cloudinaryUrl = await uploadToCloudinary(mediaPath, mediaType);
         fs.unlinkSync(mediaPath); // Cleanup after upload
 
         // Reply with the correct type
         switch (mediaType) {
             case "image":
-                repondre(`🖼️ Image URL:\n${firebaseUrl}`);
+                repondre(`🖼️ Image URL:\n${cloudinaryUrl}`);
                 break;
             case "video":
-                repondre(`🎥 Video URL:\n${firebaseUrl}`);
+                repondre(`🎥 Video URL:\n${cloudinaryUrl}`);
                 break;
             case "audio":
-                repondre(`🔊 Audio URL (MP3):\n${firebaseUrl}`);
+                repondre(`🔊 Audio URL (MP3):\n${cloudinaryUrl}`);
                 break;
             case "document":
-                repondre(`📄 Document URL:\n${firebaseUrl}`);
+                repondre(`📄 Document URL:\n${cloudinaryUrl}`);
                 break;
             default:
-                repondre(`✅ File URL:\n${firebaseUrl}`);
+                repondre(`✅ File URL:\n${cloudinaryUrl}`);
                 break;
         }
     } catch (error) {
