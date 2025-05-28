@@ -45,7 +45,7 @@
     "axios": "^1.4.0",
     "awesome-phonenumber": "^6.8.0",
     "buffer": "^6.0.3",
-    "firebase": "^11.8.1",
+    "cloudinary": "^2.6.1",
     "@firebase/storage": "^0.13.12",
     "@firebase/app": "^0.13.0",
     "body-parser": "^1.20.2",
