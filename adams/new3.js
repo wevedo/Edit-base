@@ -51,7 +51,7 @@ async function uploadToCloudinary(filePath, mediaType) {
 }
 
 // Command logic
-adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineMessage, zk, commandeOptions) => {
+adams({ nomCom: "url2", categorie: "General", reaction: "🌐" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
