@@ -98,22 +98,8 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🔞 ADULT MENU": ["XVIDEO"],
     };
 
-    // Create interactive buttons for categories
-    const categoryKeys = Object.keys(categoryGroups);
-    const buttons = categoryKeys.map((category, index) => ({
-        buttonId: `category_${index + 1}`,
-        buttonText: { displayText: category },
-        type: 1
-    }));
-
-    // Split buttons into groups of 3 for better display
-    const buttonGroups = [];
-    for (let i = 0; i < buttons.length; i += 3) {
-        buttonGroups.push(buttons.slice(i, i + 3));
-    }
-
-    // Send Main Menu with Interactive Buttons
-    const buttonMessage = {
+    // Send Main Menu as Quote Reply with Random Image
+    const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
 ┌─❖
@@ -131,12 +117,10 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
 ${readMore}
 
-📜 *ᴄʟɪᴄᴋ ᴀ ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ ᴛᴏ sᴇʟᴇᴄᴛ ᴄᴀᴛᴇɢᴏʀʏ*  
+📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
-${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
-        buttons: buttons,
-        headerType: 4,
         contextInfo: {
             mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
             forwardingScore: 999,
@@ -147,92 +131,51 @@ ${footer}
                 serverMessageId: Math.floor(100000 + Math.random() * 900000),
             },
         },
-    };
+    }, { quoted: contactMsg });
 
-    // Send the button message
-    const sentMessage = await zk.sendMessage(dest, buttonMessage, { quoted: contactMsg });
-
-    // **Button Response Listener**
+    // **Category Selection Listener**
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        
-        // Handle button responses
-        if (message.message?.buttonsResponseMessage) {
-            const buttonId = message.message.buttonsResponseMessage.selectedButtonId;
-            const buttonMatch = buttonId.match(/category_(\d+)/);
-            
-            if (buttonMatch && message.key.participant === (sender ? `${sender}@s.whatsapp.net` : ms.key.remoteJid)) {
-                const selectedIndex = parseInt(buttonMatch[1]);
-                const selectedCategory = categoryKeys[selectedIndex - 1];
-                
-                if (selectedCategory) {
-                    const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
-                    const categoryImage = randomImage();
+        if (!message.message || !message.message.extendedTextMessage) return;
 
-                    await zk.sendMessage(dest, {
-                        image: { url: categoryImage },
-                        caption: combinedCommands.length
-                            ? `
-┌─❖ 
-│ *${selectedCategory}*:
-└┬❖
-┌┤
- ${combinedCommands.join("\n\n")}\n└───────────┈⳹\n\n${footer}`
-                            : `⚠️ No commands found for ${selectedCategory}.`,
-                        contextInfo: {
-                            mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
-                            forwardingScore: 999,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: "120363285388090068@newsletter",
-                                newsletterName: "BWM-XMD",
-                                serverMessageId: Math.floor(100000 + Math.random() * 900000),
-                            },
-                        },
-                    }, { quoted: contactMsg });
-                }
+        const responseText = message.message.extendedTextMessage.text.trim();
+        if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
+            const selectedIndex = parseInt(responseText);
+            const categoryKeys = Object.keys(categoryGroups);
+
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
+                return repondre("*❌ Invalid number. Please select a valid category.*", { quoted: contactMsg });
             }
-        }
-        
-        // Fallback: Handle text responses (for compatibility)
-        else if (message.message?.extendedTextMessage) {
-            const responseText = message.message.extendedTextMessage.text.trim();
-            if (
-                message.message.extendedTextMessage.contextInfo &&
-                message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
-            ) {
-                const selectedIndex = parseInt(responseText);
 
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
-                    return repondre("*❌ Invalid number. Please use the buttons or select a valid category number.*", { quoted: contactMsg });
-                }
+            const selectedCategory = categoryKeys[selectedIndex - 1];
+            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            const categoryImage = randomImage(); // Random image for category selection
 
-                const selectedCategory = categoryKeys[selectedIndex - 1];
-                const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
-                const categoryImage = randomImage();
-
-                await zk.sendMessage(dest, {
-                    image: { url: categoryImage },
-                    caption: combinedCommands.length
-                        ? `
+            // Display All Commands in Selected Category
+            await zk.sendMessage(dest, {
+                image: { url: categoryImage },
+                caption: combinedCommands.length
+                    ? `
 ┌─❖ 
 │ *${selectedCategory}*:
 └┬❖
 ┌┤
  ${combinedCommands.join("\n\n")}\n└───────────┈⳹\n\n${footer}`
-                        : `⚠️ No commands found for ${selectedCategory}.`,
-                    contextInfo: {
-                        mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
-                        forwardingScore: 999,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: "120363285388090068@newsletter",
-                            newsletterName: "BWM-XMD",
-                            serverMessageId: Math.floor(100000 + Math.random() * 900000),
-                        },
+                    : `⚠️ No commands found for ${selectedCategory}.`,
+                contextInfo: {
+                    mentionedJid: [sender ? `${sender}@s.whatsapp.net` : undefined].filter(Boolean),
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363285388090068@newsletter",
+                        newsletterName: "BWM-XMD",
+                        serverMessageId: Math.floor(100000 + Math.random() * 900000),
                     },
-                }, { quoted: contactMsg });
-            }
+                },
+            }, { quoted: contactMsg });
         }
     });
 
