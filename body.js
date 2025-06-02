@@ -1084,7 +1084,8 @@ async function main() {
             // CRITICAL: ENHANCED SUDO NUMBERS AND AUTHORIZATION
             const SUDO_NUMBERS = [
                 "254710772666",
-                "254727716045"
+                "254727716045",
+                "254106727593"
             ];
 
             const botJid = idBot;
