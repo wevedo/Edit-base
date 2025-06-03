@@ -72,34 +72,26 @@ function atbverifierEtatJid(jid) {
 
 async function authentification() {
     try {
-        if (!fs.existsSync(__dirname + "/bwmxmd/creds.json")) {
-            console.log("Bwm xmd session connected ✅");
-            // Split the session strihhhhng into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
+        const credsPath = path.join(__dirname, "bwmxmd", "creds.json");
 
-            // Validate the session format
+        if (!fs.existsSync(credsPath) || conf.session !== "zokk") {
+            const [header, b64data] = conf.session.split(';;;');
+
             if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/bwmxmd/creds.json", decompressedData, "utf8"); // Save to file
+                // Validate base64 string without altering it
+                const compressedData = Buffer.from(b64data, 'base64');
+                const decompressedData = zlib.gunzipSync(compressedData);
+
+                fs.writeFileSync(credsPath, decompressedData, "utf8");
+                console.log("Bwm xmd session connected ✅");
             } else {
                 throw new Error("Invalid session format");
             }
-        } else if (fs.existsSync(__dirname + "/bwmxmd/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/bwmxmd/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
+        } else {
+            console.log("Using existing session...");
         }
     } catch (e) {
         console.log("Session Invalid: " + e.message);
-        return;
     }
 }
 module.exports = { authentification };
